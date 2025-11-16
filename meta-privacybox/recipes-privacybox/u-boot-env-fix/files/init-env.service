@@ -1,0 +1,15 @@
+[Unit]
+Description=Initialize U-Boot Environment
+After=local-fs.target
+Before=rauc.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/init-u-boot-env
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
