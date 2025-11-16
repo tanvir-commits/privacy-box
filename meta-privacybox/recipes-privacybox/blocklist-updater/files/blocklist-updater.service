@@ -1,0 +1,11 @@
+[Unit]
+Description=Privacy Box Blocklist Updater
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/blocklist-updater
+StandardOutput=journal
+StandardError=journal
+
+

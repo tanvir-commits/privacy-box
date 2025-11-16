@@ -1,0 +1,13 @@
+[Unit]
+Description=Privacy Box Blocklist Updater Timer
+Requires=blocklist-updater.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=24h
+Unit=blocklist-updater.service
+
+[Install]
+WantedBy=timers.target
+
+

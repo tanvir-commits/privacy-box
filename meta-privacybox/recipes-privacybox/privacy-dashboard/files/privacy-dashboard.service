@@ -1,0 +1,17 @@
+[Unit]
+Description=Privacy Dashboard Web Interface
+After=network.target device-tracker.service
+Requires=device-tracker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/privacy-dashboard
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
+

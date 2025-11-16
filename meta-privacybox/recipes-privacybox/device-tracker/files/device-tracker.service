@@ -1,0 +1,17 @@
+[Unit]
+Description=Device Tracker - Per-device DNS attribution
+After=network.target dnsmasq.service
+Requires=dnsmasq.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/device-tracker
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
+
