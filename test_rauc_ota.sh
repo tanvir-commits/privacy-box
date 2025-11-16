@@ -5,6 +5,7 @@
 set -e
 
 UPDATE_SERVER="http://192.168.68.100"
+BOARD_IP="192.168.68.100"
 
 echo "=== RAUC OTA Update Test ==="
 echo ""

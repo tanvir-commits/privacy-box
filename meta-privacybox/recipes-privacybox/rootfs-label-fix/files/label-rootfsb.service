@@ -1,0 +1,13 @@
+[Unit]
+Description=Label rootfsB Partition
+After=local-fs.target
+Before=rauc.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/label-rootfsb
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
