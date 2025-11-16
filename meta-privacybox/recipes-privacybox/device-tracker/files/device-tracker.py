@@ -104,6 +104,31 @@ class DeviceTracker:
                     self.parse_dnsmasq_leases(alt_path)
                     break
                         
+    def extract_device_type_from_hostname(self, hostname):
+        """Extract device type from DHCP hostname (e.g., 'John's iPhone' -> 'iPhone')"""
+        if not hostname or hostname == '*' or hostname == 'Unknown':
+            return None
+        
+        hostname_lower = hostname.lower()
+        
+        # Check for iPhone (most common patterns)
+        if 'iphone' in hostname_lower:
+            return 'iPhone'
+        
+        # Check for iPad
+        if 'ipad' in hostname_lower:
+            return 'iPad'
+        
+        # Check for iPod
+        if 'ipod' in hostname_lower:
+            return 'iPod'
+        
+        # Check for generic Apple device indicators
+        if 'apple' in hostname_lower and ('device' in hostname_lower or 'mac' in hostname_lower):
+            return 'Apple Device'
+        
+        return None
+    
     def parse_dnsmasq_leases(self, lease_file):
         """Parse dnsmasq lease format: timestamp mac ip hostname"""
         try:
@@ -113,26 +138,92 @@ class DeviceTracker:
                     if len(parts) >= 3:
                         mac = parts[1]
                         ip = parts[2]
-                        # Get hostname, or try reverse DNS, or use MAC-based name
+                        # Get hostname from DHCP lease
                         hostname = parts[3] if len(parts) > 3 and parts[3] != '*' else None
-                        if not hostname or hostname == 'Unknown':
-                            hostname = self.resolve_device_name(ip, mac)
-                        self.device_cache[ip] = {
-                            'mac': mac,
-                            'name': hostname
-                        }
+                        
+                        # First, try to extract device type from hostname (professional approach)
+                        device_type = self.extract_device_type_from_hostname(hostname)
+                        if device_type:
+                            # Use device type from hostname
+                            self.device_cache[ip] = {
+                                'mac': mac,
+                                'name': device_type
+                            }
+                        elif hostname and hostname != 'Unknown':
+                            # Use hostname as-is if it exists but doesn't contain device type
+                            self.device_cache[ip] = {
+                                'mac': mac,
+                                'name': hostname
+                            }
+                        else:
+                            # Fallback to resolve_device_name (DNS patterns, OUI, etc.)
+                            resolved_name = self.resolve_device_name(ip, mac)
+                            self.device_cache[ip] = {
+                                'mac': mac,
+                                'name': resolved_name
+                            }
         except Exception as e:
             print(f"Error parsing leases: {e}")
     
     def resolve_device_name(self, ip, mac):
         """Try to resolve device name from various sources"""
-        # Try reverse DNS first (with timeout)
+        # Priority 1: Check DHCP hostname (if available in cache)
+        if ip in self.device_cache:
+            cached_name = self.device_cache[ip].get('name')
+            # If cached name is a device type (iPhone, iPad, etc.), use it
+            if cached_name and any(keyword in cached_name.lower() for keyword in ['iphone', 'ipad', 'ipod', 'apple']):
+                return cached_name
+        
+        # Priority 2: Check DNS query patterns to identify device type (works even with randomized MACs)
+        cursor = self.db.cursor()
+        
+        # Apple device detection (iCloud, Apple DNS, etc.)
+        apple_domains = ['icloud.com', 'apple-dns.net', 'apple.com', 'appleid.apple.com', 
+                        'apple-cloudkit.com', 'mzstatic.com', 'apple-mapkit.com']
+        total_apple_queries = 0
+        for domain in apple_domains:
+            cursor.execute("""
+                SELECT COUNT(*) FROM dns_queries 
+                WHERE device_ip = ? AND domain LIKE ? AND timestamp > ?
+            """, (ip, f'%{domain}%', int(time.time()) - (7 * 24 * 60 * 60)))  # Last 7 days
+            count = cursor.fetchone()[0]
+            total_apple_queries += count
+        
+        if total_apple_queries >= 5:  # If device queries Apple domains frequently, it's likely Apple
+            # Get total query count to help distinguish iPad (less active) from iPhone
+            cursor.execute("""
+                SELECT COUNT(*) FROM dns_queries 
+                WHERE device_ip = ? AND timestamp > ?
+            """, (ip, int(time.time()) - (7 * 24 * 60 * 60)))
+            total_queries = cursor.fetchone()[0]
+            
+            # Determine device type based on query patterns
+            # iPads typically have lower overall query volume than iPhones
+            if 'iphone' in str(ip).lower():
+                return "iPhone"
+            elif 'ipad' in str(ip).lower():
+                return "iPad"
+            elif total_apple_queries > 100:  # High Apple query volume = iPhone
+                return "iPhone"
+            elif total_apple_queries >= 5 and total_queries < 200:  # Moderate Apple queries, low total = iPad
+                return "iPad"
+            else:
+                return "Apple Device"
+        
+        # Priority 3: Try reverse DNS (with timeout)
         try:
             import socket
             socket.setdefaulttimeout(2)  # 2 second timeout
             hostname, _, _ = socket.gethostbyaddr(ip)
             if hostname and hostname != ip:
                 name = hostname.split('.')[0]  # Remove domain
+                # Check for device type in hostname
+                device_type = self.extract_device_type_from_hostname(name)
+                if device_type:
+                    return device_type
+                # Check for Apple device names in hostname
+                if any(keyword in name.lower() for keyword in ['iphone', 'ipad', 'ipod', 'apple']):
+                    return name
                 if name and name != ip:
                     return name
         except:
@@ -167,7 +258,7 @@ class DeviceTracker:
             
     def get_device_info(self, ip):
         """Get device info from cache, database, or ARP table"""
-        # First check cache
+        # First check cache (may contain DHCP hostname-based device type)
         if ip in self.device_cache:
             return self.device_cache[ip]
             
@@ -181,7 +272,7 @@ class DeviceTracker:
         # Try ARP table to get MAC address
         mac = self.get_mac_from_arp(ip)
         if mac and mac != 'unknown':
-            # Resolve name from MAC
+            # Resolve name (will check DNS patterns, OUI, etc.)
             name = self.resolve_device_name(ip, mac)
             # Cache it
             self.device_cache[ip] = {'mac': mac, 'name': name}
