@@ -312,41 +312,63 @@ class DeviceTracker:
         return 'unknown'
     
     def update_unknown_devices(self):
-        """Update all Unknown device entries with resolved names"""
+        """Update all Unknown/Device-XXX device entries with resolved names"""
         cursor = self.db.cursor()
-        # Get all devices with Unknown names
-        cursor.execute("SELECT ip FROM devices WHERE name = 'Unknown' OR name IS NULL")
+        # Get all devices with Unknown names OR generic Device-XXX names (which need better identification)
+        cursor.execute("""
+            SELECT ip FROM devices 
+            WHERE name = 'Unknown' OR name IS NULL 
+               OR name LIKE 'Device-%'
+        """)
         unknown_ips = [row[0] for row in cursor.fetchall()]
         
         if not unknown_ips:
             return
         
-        print(f"Updating {len(unknown_ips)} devices with Unknown names...")
+        print(f"Updating {len(unknown_ips)} devices with Unknown/Device-XXX names...")
         updated_count = 0
         
         for ip in unknown_ips:
             mac = self.get_mac_from_arp(ip)
             name = self.resolve_device_name(ip, mac)
             
-            # Update devices table
-            cursor.execute("UPDATE devices SET mac = ?, name = ? WHERE ip = ?", 
-                          (mac, name, ip))
+            # Only update if we got a better name (not Device-XXX unless it was Unknown)
+            current_name = cursor.execute("SELECT name FROM devices WHERE ip = ?", (ip,)).fetchone()
+            current_name = current_name[0] if current_name else None
             
-            # Update recent dns_queries (last 7 days) where device_name is Unknown
-            since = int(time.time()) - (7 * 24 * 60 * 60)
-            cursor.execute("""
-                UPDATE dns_queries 
-                SET device_mac = ?, device_name = ? 
-                WHERE device_ip = ? AND (device_name = 'Unknown' OR device_name IS NULL) 
-                AND timestamp > ?
-            """, (mac, name, ip, since))
+            # Update if name improved (Unknown -> anything, or Device-XXX -> named device)
+            should_update = False
+            if current_name in ('Unknown', None):
+                should_update = True  # Always update Unknown
+            elif current_name and current_name.startswith('Device-') and not name.startswith('Device-'):
+                should_update = True  # Update Device-XXX to a real name
+            elif current_name == name:
+                should_update = False  # No change needed
+            else:
+                should_update = True  # Name changed
             
-            updated_count += 1
-            if updated_count % 5 == 0:
-                print(f"  Updated {updated_count}/{len(unknown_ips)} devices...")
+            if should_update:
+                # Update devices table
+                cursor.execute("UPDATE devices SET mac = ?, name = ? WHERE ip = ?", 
+                              (mac, name, ip))
+                
+                # Update recent dns_queries (last 7 days) where device_name needs updating
+                since = int(time.time()) - (7 * 24 * 60 * 60)
+                cursor.execute("""
+                    UPDATE dns_queries 
+                    SET device_mac = ?, device_name = ? 
+                    WHERE device_ip = ? 
+                      AND (device_name = 'Unknown' OR device_name IS NULL OR device_name LIKE 'Device-%')
+                      AND timestamp > ?
+                """, (mac, name, ip, since))
+                
+                updated_count += 1
+                if updated_count % 5 == 0:
+                    print(f"  Updated {updated_count}/{len(unknown_ips)} devices...")
         
-        self.db.commit()
-        print(f"✓ Updated {updated_count} devices with resolved names")
+        if updated_count > 0:
+            self.db.commit()
+            print(f"✓ Updated {updated_count} devices with resolved names")
         
     def is_tracker_domain(self, domain):
         """Check if domain is a known tracker"""
