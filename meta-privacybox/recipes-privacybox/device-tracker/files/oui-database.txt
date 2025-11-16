@@ -1,0 +1,158 @@
+# IEEE OUI Database - Common Vendors
+# Format: OUI_PREFIX|VENDOR_NAME
+# This is a curated subset of common device vendors
+
+# Apple Inc.
+000393|Apple Inc.
+000502|Apple Inc.
+000A27|Apple Inc.
+000A95|Apple Inc.
+000D93|Apple Inc.
+0010FA|Apple Inc.
+001124|Apple Inc.
+001451|Apple Inc.
+0016CB|Apple Inc.
+0017F2|Apple Inc.
+001B44|Apple Inc.
+001B63|Apple Inc.
+001CDF|Apple Inc.
+001E2C|Apple Inc.
+001EC2|Apple Inc.
+001E52|Apple Inc.
+0021E9|Apple Inc.
+002312|Apple Inc.
+00236C|Apple Inc.
+0023DF|Apple Inc.
+002500|Apple Inc.
+00254B|Apple Inc.
+0025BC|Apple Inc.
+002608|Apple Inc.
+00264A|Apple Inc.
+0026BB|Apple Inc.
+0026C7|Apple Inc.
+0050E4|Apple Inc.
+3C0754|Apple Inc.
+40133A|Apple Inc.
+5855CA|Apple Inc.
+6C4008|Apple Inc.
+7C6D62|Apple Inc.
+8C8590|Apple Inc.
+9801A7|Apple Inc.
+A45E60|Apple Inc.
+ACDE48|Apple Inc.
+B853AC|Apple Inc.
+BC52B7|Apple Inc.
+C8BCC8|Apple Inc.
+D0034B|Apple Inc.
+D83062|Apple Inc.
+E0ACCB|Apple Inc.
+F0DBE2|Apple Inc.
+F4F15A|Apple Inc.
+FC253F|Apple Inc.
+
+# Samsung Electronics
+0000F0|Samsung Electronics
+0007AB|Samsung Electronics
+000E0C|Samsung Electronics
+00119E|Samsung Electronics
+0012FB|Samsung Electronics
+001377|Samsung Electronics
+001599|Samsung Electronics
+0015B9|Samsung Electronics
+001632|Samsung Electronics
+00166B|Samsung Electronics
+0017C9|Samsung Electronics
+001A2B|Samsung Electronics
+001B98|Samsung Electronics
+001D25|Samsung Electronics
+001E75|Samsung Electronics
+001FCC|Samsung Electronics
+00214C|Samsung Electronics
+002339|Samsung Electronics
+002376|Samsung Electronics
+002491|Samsung Electronics
+002538|Samsung Electronics
+00265D|Samsung Electronics
+5C0A5B|Samsung Electronics
+5C4979|Samsung Electronics
+785262|Samsung Electronics
+90489A|Samsung Electronics
+A0F3C1|Samsung Electronics
+B0DF3A|Samsung Electronics
+C81479|Samsung Electronics
+D46E5C|Samsung Electronics
+E0508B|Samsung Electronics
+F02765|Samsung Electronics
+F409D8|Samsung Electronics
+FC1910|Samsung Electronics
+
+# Google Inc.
+001A11|Google Inc.
+001B63|Google Inc.
+001DD9|Google Inc.
+001E06|Google Inc.
+001F5B|Google Inc.
+001731|Google Inc.
+0022D1|Google Inc.
+00236D|Google Inc.
+0026BB|Google Inc.
+3C5AB4|Google Inc.
+6C8DC1|Google Inc.
+84FCFE|Google Inc.
+907240|Google Inc.
+A47733|Google Inc.
+B40B44|Google Inc.
+C88550|Google Inc.
+D8EB97|Google Inc.
+E4F89C|Google Inc.
+F4F5DB|Google Inc.
+FCA667|Google Inc.
+
+# Microsoft Corporation
+00155D|Microsoft Corporation
+001DD8|Microsoft Corporation
+001EC0|Microsoft Corporation
+001E67|Microsoft Corporation
+001F3A|Microsoft Corporation
+002264|Microsoft Corporation
+E86538|Microsoft Corporation
+
+# Dell Inc.
+0019E0|Dell Inc.
+001B21|Dell Inc.
+001CC0|Dell Inc.
+001DD9|Dell Inc.
+001E68|Dell Inc.
+001FF3|Dell Inc.
+
+# TP-Link Technologies
+50C7BF|TP-Link Technologies
+A0F3C1|TP-Link Technologies
+C8D3FF|TP-Link Technologies
+E0B52D|TP-Link Technologies
+
+# Netgear Inc.
+0022F4|Netgear Inc.
+20B399|Netgear Inc.
+84C9B2|Netgear Inc.
+A021B7|Netgear Inc.
+C03F0E|Netgear Inc.
+
+# Linksys (Belkin)
+C05627|Belkin International
+
+# Observed devices from your network
+80482C|Wyze Labs Inc.
+0417B6|Anker Innovations
+78028B|Unknown Vendor
+C01803|Unknown Vendor
+004B12|Unknown Vendor
+1A8BF7|Unknown Vendor
+
+# Additional observed MACs (need vendor lookup)
+D48C49|Unknown Vendor
+F024F9|Unknown Vendor
+D275D3|Unknown Vendor
+107C61|Unknown Vendor
+9C5322|Unknown Vendor
+

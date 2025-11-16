@@ -26,6 +26,26 @@ def get_db():
     """Get database connection"""
     return sqlite3.connect(DB_PATH)
 
+def get_device_name(cursor, ip):
+    """Get most up-to-date device name"""
+    # First try devices table (most authoritative)
+    cursor.execute("SELECT name FROM devices WHERE ip = ?", (ip,))
+    row = cursor.fetchone()
+    if row and row[0] and row[0] != 'Unknown':
+        return row[0]
+    
+    # Fallback to most recent name from dns_queries
+    cursor.execute("""
+        SELECT device_name FROM dns_queries 
+        WHERE device_ip = ? AND device_name IS NOT NULL AND device_name != 'Unknown' 
+        ORDER BY timestamp DESC LIMIT 1
+    """, (ip,))
+    row = cursor.fetchone()
+    if row and row[0]:
+        return row[0]
+    
+    return 'Unknown'
+
 @app.route('/')
 def index():
     """Main dashboard page"""
@@ -37,18 +57,21 @@ def get_devices():
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT DISTINCT ip, mac, name, MAX(last_seen) as last_seen
+        SELECT DISTINCT ip, mac, MAX(last_seen) as last_seen
         FROM devices
         GROUP BY ip
         ORDER BY last_seen DESC
     """)
     devices = []
     for row in cursor.fetchall():
+        device_ip = row[0]
+        # Get most up-to-date device name
+        device_name = get_device_name(cursor, device_ip)
         devices.append({
-            'ip': row[0],
+            'ip': device_ip,
             'mac': row[1],
-            'name': row[2] or 'Unknown',
-            'last_seen': row[3]
+            'name': device_name,
+            'last_seen': row[2]
         })
     conn.close()
     return jsonify(devices)
@@ -60,10 +83,13 @@ def get_device_stats(ip):
     cursor = conn.cursor()
     
     # Get device info
-    cursor.execute("SELECT mac, name FROM devices WHERE ip = ?", (ip,))
+    cursor.execute("SELECT mac FROM devices WHERE ip = ?", (ip,))
     device_info = cursor.fetchone()
     if not device_info:
         return jsonify({'error': 'Device not found'}), 404
+    
+    # Get most up-to-date device name
+    device_name = get_device_name(cursor, ip)
     
     # Get query stats (last 24 hours)
     since = int((datetime.now() - timedelta(hours=24)).timestamp())
@@ -86,10 +112,41 @@ def get_device_stats(ip):
         WHERE device_ip = ? AND is_tracker = 1 AND timestamp > ?
         GROUP BY domain
         ORDER BY count DESC
-        LIMIT 10
+        LIMIT 20
     """, (ip, since))
     
     top_trackers = [{'domain': row[0], 'count': row[1]} for row in cursor.fetchall()]
+    
+    # Get top domains (all queries, not just trackers)
+    cursor.execute("""
+        SELECT domain, COUNT(*) as count
+        FROM dns_queries
+        WHERE device_ip = ? AND timestamp > ?
+        GROUP BY domain
+        ORDER BY count DESC
+        LIMIT 20
+    """, (ip, since))
+    
+    top_domains = [{'domain': row[0], 'count': row[1]} for row in cursor.fetchall()]
+    
+    # Get recent activity (last hour)
+    hour_ago = int((datetime.now() - timedelta(hours=1)).timestamp())
+    cursor.execute("""
+        SELECT domain, is_tracker, blocked, timestamp
+        FROM dns_queries
+        WHERE device_ip = ? AND timestamp > ?
+        ORDER BY timestamp DESC
+        LIMIT 50
+    """, (ip, hour_ago))
+    
+    recent_activity = []
+    for row in cursor.fetchall():
+        recent_activity.append({
+            'domain': row[0],
+            'is_tracker': bool(row[1]),
+            'blocked': bool(row[2]),
+            'timestamp': row[3]
+        })
     
     conn.close()
     
@@ -97,7 +154,7 @@ def get_device_stats(ip):
         'device': {
             'ip': ip,
             'mac': device_info[0],
-            'name': device_info[1] or 'Unknown'
+            'name': device_name
         },
         'stats': {
             'total_queries': stats[0] or 0,
@@ -105,7 +162,9 @@ def get_device_stats(ip):
             'blocked_queries': stats[2] or 0,
             'unique_domains': stats[3] or 0
         },
-        'top_trackers': top_trackers
+        'top_trackers': top_trackers,
+        'top_domains': top_domains,
+        'recent_activity': recent_activity
     })
 
 @app.route('/api/network/stats')
@@ -132,7 +191,6 @@ def get_network_stats():
     cursor.execute("""
         SELECT 
             device_ip,
-            device_name,
             COUNT(*) as queries,
             SUM(CASE WHEN is_tracker = 1 THEN 1 ELSE 0 END) as trackers
         FROM dns_queries
@@ -143,11 +201,14 @@ def get_network_stats():
     
     devices = []
     for row in cursor.fetchall():
+        device_ip = row[0]
+        # Get most up-to-date device name
+        device_name = get_device_name(cursor, device_ip)
         devices.append({
-            'ip': row[0],
-            'name': row[1] or 'Unknown',
-            'queries': row[2],
-            'trackers': row[3]
+            'ip': device_ip,
+            'name': device_name,
+            'queries': row[1],
+            'trackers': row[2]
         })
     
     conn.close()
@@ -180,9 +241,12 @@ def get_realtime():
     
     queries = []
     for row in cursor.fetchall():
+        device_ip = row[0]
+        # Get most up-to-date device name
+        device_name = get_device_name(cursor, device_ip)
         queries.append({
-            'device_ip': row[0],
-            'device_name': row[1] or 'Unknown',
+            'device_ip': device_ip,
+            'device_name': device_name,
             'domain': row[2],
             'is_tracker': bool(row[3]),
             'blocked': bool(row[4]),
@@ -191,6 +255,45 @@ def get_realtime():
     
     conn.close()
     return jsonify(queries)
+
+@app.route('/api/network/top-domains')
+def get_top_domains():
+    """Get network-wide top domains and trackers"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    since = int((datetime.now() - timedelta(hours=24)).timestamp())
+    
+    # Get top domains (all queries)
+    cursor.execute("""
+        SELECT domain, COUNT(*) as count
+        FROM dns_queries
+        WHERE timestamp > ?
+        GROUP BY domain
+        ORDER BY count DESC
+        LIMIT 30
+    """, (since,))
+    
+    top_domains = [{'domain': row[0], 'count': row[1]} for row in cursor.fetchall()]
+    
+    # Get top tracker domains
+    cursor.execute("""
+        SELECT domain, COUNT(*) as count
+        FROM dns_queries
+        WHERE is_tracker = 1 AND timestamp > ?
+        GROUP BY domain
+        ORDER BY count DESC
+        LIMIT 30
+    """, (since,))
+    
+    top_trackers = [{'domain': row[0], 'count': row[1]} for row in cursor.fetchall()]
+    
+    conn.close()
+    
+    return jsonify({
+        'top_domains': top_domains,
+        'top_trackers': top_trackers
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=False)

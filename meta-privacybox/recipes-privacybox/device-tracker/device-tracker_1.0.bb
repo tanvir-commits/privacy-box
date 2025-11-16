@@ -7,6 +7,8 @@ SRC_URI = " \
     file://device-tracker.py \
     file://device-tracker.service \
     file://requirements.txt \
+    file://oui_lookup.py \
+    file://oui-database.txt \
 "
 
 S = "${WORKDIR}"
@@ -28,9 +30,16 @@ do_install() {
     install -d ${D}${sysconfdir}/device-tracker
     install -d ${D}${localstatedir}/lib/device-tracker
     install -d ${D}${systemd_system_unitdir}
+    install -d ${D}${datadir}/device-tracker
+    install -d ${D}${sysconfdir}/device-tracker
     
-    # Install Python script
+    # Install Python scripts
     install -m 0755 ${WORKDIR}/device-tracker.py ${D}${bindir}/device-tracker
+    install -m 0644 ${WORKDIR}/oui_lookup.py ${D}${bindir}/oui_lookup.py
+    
+    # Install OUI database
+    install -m 0644 ${WORKDIR}/oui-database.txt ${D}${datadir}/device-tracker/oui-database.txt
+    install -m 0644 ${WORKDIR}/oui-database.txt ${D}${sysconfdir}/device-tracker/oui-database.txt
     
     # Install systemd service
     install -m 0644 ${WORKDIR}/device-tracker.service ${D}${systemd_system_unitdir}/
@@ -43,5 +52,8 @@ FILES:${PN} += " \
     ${sysconfdir}/device-tracker \
     ${localstatedir}/lib/device-tracker \
     ${bindir}/device-tracker \
+    ${bindir}/oui_lookup.py \
+    ${datadir}/device-tracker/oui-database.txt \
+    ${sysconfdir}/device-tracker/oui-database.txt \
 "
 

@@ -188,6 +188,146 @@
             font-size: 11px;
             margin-left: 10px;
         }
+        
+        .device-card {
+            cursor: pointer;
+        }
+        
+        .device-card.clickable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .modal-section {
+            margin-bottom: 30px;
+        }
+        
+        .modal-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .domain-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .domain-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: #f5f5f5;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        
+        .domain-item.tracker {
+            background: #ffebee;
+            border-left: 4px solid #ff4444;
+        }
+        
+        .domain-count {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-mini {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .stat-mini-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .stat-mini-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .devices-section > div:first-child {
+                flex-direction: column;
+                align-items: stretch !important;
+            }
+            
+            .devices-section > div:first-child > div {
+                width: 100%;
+            }
+            
+            #deviceSearch {
+                max-width: 100% !important;
+            }
+            
+            .devices-section > div:last-child {
+                grid-template-columns: 1fr !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -220,8 +360,42 @@
         </div>
         
         <div class="devices-section">
-            <h2 style="margin-bottom: 20px;">Devices</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">Devices</h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="deviceSort" style="padding: 8px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 14px;">
+                        <option value="trackers">Sort by Trackers</option>
+                        <option value="queries">Sort by Queries</option>
+                        <option value="name">Sort by Name</option>
+                    </select>
+                    <input type="text" id="deviceSearch" class="search-box" placeholder="Search devices..." style="max-width: 300px; margin: 0;">
+                </div>
+            </div>
             <div id="devicesList" class="loading">Loading devices...</div>
+        </div>
+        
+        <div class="devices-section">
+            <h2 style="margin-bottom: 20px;">Network-Wide Top Domains</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Top Tracker Domains (24h)</h3>
+                    <div id="topTrackersList" class="loading">Loading...</div>
+                </div>
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Top Domains (24h)</h3>
+                    <div id="topDomainsList" class="loading">Loading...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Device Detail Modal -->
+        <div id="deviceModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeModal">&times;</span>
+                <div id="modalContent">
+                    <div class="loading">Loading device details...</div>
+                </div>
+            </div>
         </div>
         
         <div class="realtime-section">
@@ -265,7 +439,7 @@
             }
             
             container.innerHTML = devices.map(device => `
-                <div class="device-card">
+                <div class="device-card clickable" onclick="showDeviceDetails('${device.ip}')">
                     <div class="device-header">
                         <div>
                             <div class="device-name">${device.name}</div>
@@ -312,13 +486,218 @@
             }
         }
         
+        // Device search and sort functionality
+        let allDevices = [];
+        let currentSort = 'trackers';
+        
+        document.getElementById('deviceSearch').addEventListener('input', function(e) {
+            applyFiltersAndSort();
+        });
+        
+        document.getElementById('deviceSort').addEventListener('change', function(e) {
+            currentSort = e.target.value;
+            applyFiltersAndSort();
+        });
+        
+        function applyFiltersAndSort() {
+            const searchTerm = document.getElementById('deviceSearch').value.toLowerCase();
+            let filtered = allDevices.filter(device => 
+                device.name.toLowerCase().includes(searchTerm) ||
+                device.ip.includes(searchTerm)
+            );
+            
+            // Sort devices
+            filtered.sort((a, b) => {
+                switch(currentSort) {
+                    case 'trackers':
+                        return b.trackers - a.trackers;
+                    case 'queries':
+                        return b.queries - a.queries;
+                    case 'name':
+                        return a.name.localeCompare(b.name);
+                    default:
+                        return 0;
+                }
+            });
+            
+            updateDevicesList(filtered);
+        }
+        
+        // Modal functionality
+        const modal = document.getElementById('deviceModal');
+        const closeBtn = document.getElementById('closeModal');
+        
+        closeBtn.onclick = function() {
+            modal.style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        async function showDeviceDetails(ip) {
+            modal.style.display = 'block';
+            document.getElementById('modalContent').innerHTML = '<div class="loading">Loading device details...</div>';
+            
+            try {
+                const response = await fetch(`/api/device/${ip}/stats`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                
+                // Format recent activity
+                const activityHtml = data.recent_activity.slice(0, 20).map(activity => {
+                    const date = new Date(activity.timestamp * 1000);
+                    const timeStr = date.toLocaleTimeString();
+                    const trackerClass = activity.is_tracker ? 'tracker' : '';
+                    return `
+                        <div class="domain-item ${trackerClass}">
+                            <span>${activity.domain}</span>
+                            <span style="color: #999; font-size: 12px;">${timeStr}</span>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Format top domains
+                const topDomainsHtml = data.top_domains.map(domain => `
+                    <div class="domain-item">
+                        <span>${domain.domain}</span>
+                        <span class="domain-count">${domain.count}</span>
+                    </div>
+                `).join('');
+                
+                // Format top trackers
+                const topTrackersHtml = data.top_trackers.map(tracker => `
+                    <div class="domain-item tracker">
+                        <span>${tracker.domain}</span>
+                        <span class="domain-count">${tracker.count}</span>
+                    </div>
+                `).join('');
+                
+                document.getElementById('modalContent').innerHTML = `
+                    <h2>${data.device.name}</h2>
+                    <p style="color: #666; margin-bottom: 20px;">
+                        IP: ${data.device.ip} | MAC: ${data.device.mac || 'Unknown'}
+                    </p>
+                    
+                    <div class="stats-row">
+                        <div class="stat-mini">
+                            <div class="stat-mini-label">Total Queries</div>
+                            <div class="stat-mini-value">${data.stats.total_queries.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-mini-label">Tracker Queries</div>
+                            <div class="stat-mini-value">${data.stats.tracker_queries.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-mini-label">Blocked</div>
+                            <div class="stat-mini-value">${data.stats.blocked_queries.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-mini-label">Unique Domains</div>
+                            <div class="stat-mini-value">${data.stats.unique_domains.toLocaleString()}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-section">
+                        <h3>Top Tracker Domains (24h)</h3>
+                        <div class="domain-list">
+                            ${topTrackersHtml || '<p style="color: #666;">No tracker domains found</p>'}
+                        </div>
+                    </div>
+                    
+                    <div class="modal-section">
+                        <h3>Top Domains (24h)</h3>
+                        <div class="domain-list">
+                            ${topDomainsHtml || '<p style="color: #666;">No domains found</p>'}
+                        </div>
+                    </div>
+                    
+                    <div class="modal-section">
+                        <h3>Recent Activity (Last Hour)</h3>
+                        <div class="domain-list">
+                            ${activityHtml || '<p style="color: #666;">No recent activity</p>'}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading device details:', error);
+                document.getElementById('modalContent').innerHTML = `
+                    <div class="error-message">Error loading device details: ${error.message}</div>
+                `;
+            }
+        }
+        
+        // Store all devices for search
+        function updateDevicesList(devices) {
+            allDevices = devices;
+            const container = document.getElementById('devicesList');
+            
+            if (devices.length === 0) {
+                container.innerHTML = '<div class="loading">No devices found</div>';
+                return;
+            }
+            
+            container.innerHTML = devices.map(device => `
+                <div class="device-card clickable" onclick="showDeviceDetails('${device.ip}')">
+                    <div class="device-header">
+                        <div>
+                            <div class="device-name">${device.name}</div>
+                            <div class="device-ip">${device.ip}</div>
+                        </div>
+                        <span class="tracker-badge">${device.trackers} trackers</span>
+                    </div>
+                    <div style="color: #666; font-size: 14px;">
+                        ${device.queries.toLocaleString()} total queries
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function fetchTopDomains() {
+            try {
+                const response = await fetch('/api/network/top-domains');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                
+                // Update top trackers
+                const trackersHtml = data.top_trackers.map(tracker => `
+                    <div class="domain-item tracker">
+                        <span>${tracker.domain}</span>
+                        <span class="domain-count">${tracker.count.toLocaleString()}</span>
+                    </div>
+                `).join('');
+                document.getElementById('topTrackersList').innerHTML = trackersHtml || '<p style="color: #666;">No tracker domains found</p>';
+                
+                // Update top domains
+                const domainsHtml = data.top_domains.map(domain => `
+                    <div class="domain-item">
+                        <span>${domain.domain}</span>
+                        <span class="domain-count">${domain.count.toLocaleString()}</span>
+                    </div>
+                `).join('');
+                document.getElementById('topDomainsList').innerHTML = domainsHtml || '<p style="color: #666;">No domains found</p>';
+            } catch (error) {
+                console.error('Error fetching top domains:', error);
+                document.getElementById('topTrackersList').innerHTML = '<div class="error-message">Error loading data</div>';
+                document.getElementById('topDomainsList').innerHTML = '<div class="error-message">Error loading data</div>';
+            }
+        }
+        
         // Initial load
         fetchNetworkStats();
         fetchRealtime();
+        fetchTopDomains();
         
         // Update every 5 seconds
         setInterval(fetchNetworkStats, 5000);
         setInterval(fetchRealtime, 2000);
+        setInterval(fetchTopDomains, 10000); // Update top domains every 10 seconds
     </script>
 </body>
 </html>

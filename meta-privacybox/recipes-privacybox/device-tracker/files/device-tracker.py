@@ -9,9 +9,30 @@ import sqlite3
 import json
 import time
 import subprocess
+import sys
+import os
 from datetime import datetime
 from pathlib import Path
 from collections import defaultdict
+
+# Add oui_lookup to path - try multiple locations
+try:
+    # Try to get script directory
+    _script_file = __file__ if '__file__' in globals() else sys.argv[0] if sys.argv else '.'
+    _script_dir = os.path.dirname(os.path.abspath(_script_file))
+    sys.path.insert(0, _script_dir)
+except:
+    pass
+
+# Also add /usr/bin where oui_lookup.py will be installed
+sys.path.insert(0, '/usr/bin')
+
+try:
+    from oui_lookup import lookup_vendor
+    OUI_AVAILABLE = True
+except ImportError as e:
+    OUI_AVAILABLE = False
+    print(f"Warning: oui_lookup module not available ({e}), using fallback vendor detection")
 
 DNSMASQ_LOG = "/var/log/pihole/pihole.log"
 DHCP_LEASES = "/var/lib/misc/dnsmasq.leases"  # dnsmasq default lease file
@@ -24,6 +45,8 @@ class DeviceTracker:
         self.init_db()
         self.device_cache = {}
         self.load_dhcp_leases()
+        # Update any Unknown devices on startup
+        self.update_unknown_devices()
         
     def init_db(self):
         """Initialize SQLite database"""
@@ -90,16 +113,61 @@ class DeviceTracker:
                     if len(parts) >= 3:
                         mac = parts[1]
                         ip = parts[2]
-                        hostname = parts[3] if len(parts) > 3 else 'Unknown'
+                        # Get hostname, or try reverse DNS, or use MAC-based name
+                        hostname = parts[3] if len(parts) > 3 and parts[3] != '*' else None
+                        if not hostname or hostname == 'Unknown':
+                            hostname = self.resolve_device_name(ip, mac)
                         self.device_cache[ip] = {
                             'mac': mac,
                             'name': hostname
                         }
         except Exception as e:
             print(f"Error parsing leases: {e}")
+    
+    def resolve_device_name(self, ip, mac):
+        """Try to resolve device name from various sources"""
+        # Try reverse DNS first (with timeout)
+        try:
+            import socket
+            socket.setdefaulttimeout(2)  # 2 second timeout
+            hostname, _, _ = socket.gethostbyaddr(ip)
+            if hostname and hostname != ip:
+                name = hostname.split('.')[0]  # Remove domain
+                if name and name != ip:
+                    return name
+        except:
+            pass
+        
+        # Try MAC OUI lookup using database (only if we have a valid MAC)
+        if mac and mac != 'unknown' and ':' in mac:
+            if OUI_AVAILABLE:
+                try:
+                    vendor = lookup_vendor(mac)
+                    if vendor and 'Unknown Vendor' not in vendor and 'Unknown' not in vendor:
+                        # Clean up vendor name - remove common suffixes
+                        vendor_clean = vendor.replace(' Inc.', '').replace(' Corporation', '').replace(' Inc', '')
+                        vendor_clean = vendor_clean.replace(' Technologies', '').replace(' Electronics', '')
+                        return f"{vendor_clean} Device"
+                except Exception as e:
+                    print(f"Error in OUI lookup: {e}")
+            
+            # Fallback to hardcoded map for common devices (if OUI lookup fails)
+            # This is only used if OUI database is not available
+            mac_prefix = mac.upper().replace(':', '')[:6]
+            fallback_map = {
+                '80482C': 'Wyze',
+                '0417B6': 'Eufy',
+                'E86538': 'Microsoft',
+            }
+            if mac_prefix in fallback_map:
+                return f"{fallback_map[mac_prefix]} Device"
+        
+        # Fallback: Use last octet of IP
+        return f"Device-{ip.split('.')[-1]}"
             
     def get_device_info(self, ip):
-        """Get device info from cache or database"""
+        """Get device info from cache, database, or ARP table"""
+        # First check cache
         if ip in self.device_cache:
             return self.device_cache[ip]
             
@@ -107,10 +175,87 @@ class DeviceTracker:
         cursor = self.db.cursor()
         cursor.execute("SELECT mac, name FROM devices WHERE ip = ?", (ip,))
         row = cursor.fetchone()
-        if row:
+        if row and row[0] != 'unknown':
             return {'mac': row[0], 'name': row[1]}
+        
+        # Try ARP table to get MAC address
+        mac = self.get_mac_from_arp(ip)
+        if mac and mac != 'unknown':
+            # Resolve name from MAC
+            name = self.resolve_device_name(ip, mac)
+            # Cache it
+            self.device_cache[ip] = {'mac': mac, 'name': name}
+            return {'mac': mac, 'name': name}
             
-        return {'mac': 'unknown', 'name': 'Unknown'}
+        # Last resort: try to resolve name from IP only
+        name = self.resolve_device_name(ip, 'unknown')
+        return {'mac': 'unknown', 'name': name}
+    
+    def get_mac_from_arp(self, ip):
+        """Get MAC address from ARP table"""
+        try:
+            # Read /proc/net/arp
+            with open('/proc/net/arp', 'r') as f:
+                for line in f:
+                    parts = line.split()
+                    if len(parts) >= 4 and parts[0] == ip:
+                        mac = parts[3]
+                        if mac != '00:00:00:00:00:00':
+                            return mac
+        except Exception as e:
+            print(f"Error reading ARP table: {e}")
+        
+        # Try ip neigh command as fallback
+        try:
+            result = subprocess.run(['ip', 'neigh', 'show', ip], 
+                                  capture_output=True, text=True, timeout=2)
+            if result.returncode == 0 and result.stdout:
+                parts = result.stdout.strip().split()
+                if len(parts) >= 5:
+                    mac = parts[4]
+                    if mac and mac != '00:00:00:00:00:00':
+                        return mac
+        except Exception as e:
+            pass
+        
+        return 'unknown'
+    
+    def update_unknown_devices(self):
+        """Update all Unknown device entries with resolved names"""
+        cursor = self.db.cursor()
+        # Get all devices with Unknown names
+        cursor.execute("SELECT ip FROM devices WHERE name = 'Unknown' OR name IS NULL")
+        unknown_ips = [row[0] for row in cursor.fetchall()]
+        
+        if not unknown_ips:
+            return
+        
+        print(f"Updating {len(unknown_ips)} devices with Unknown names...")
+        updated_count = 0
+        
+        for ip in unknown_ips:
+            mac = self.get_mac_from_arp(ip)
+            name = self.resolve_device_name(ip, mac)
+            
+            # Update devices table
+            cursor.execute("UPDATE devices SET mac = ?, name = ? WHERE ip = ?", 
+                          (mac, name, ip))
+            
+            # Update recent dns_queries (last 7 days) where device_name is Unknown
+            since = int(time.time()) - (7 * 24 * 60 * 60)
+            cursor.execute("""
+                UPDATE dns_queries 
+                SET device_mac = ?, device_name = ? 
+                WHERE device_ip = ? AND (device_name = 'Unknown' OR device_name IS NULL) 
+                AND timestamp > ?
+            """, (mac, name, ip, since))
+            
+            updated_count += 1
+            if updated_count % 5 == 0:
+                print(f"  Updated {updated_count}/{len(unknown_ips)} devices...")
+        
+        self.db.commit()
+        print(f"✓ Updated {updated_count} devices with resolved names")
         
     def is_tracker_domain(self, domain):
         """Check if domain is a known tracker"""
