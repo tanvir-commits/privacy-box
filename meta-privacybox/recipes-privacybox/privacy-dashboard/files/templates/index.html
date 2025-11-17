@@ -214,60 +214,12 @@
             font-weight: 600;
             color: var(--color-text);
             white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }
         
         .device-ip {
             color: var(--color-text-tertiary);
             font-size: 11px;
             white-space: nowrap;
-        }
-        
-        .device-last-active {
-            color: var(--color-text-tertiary);
-            font-size: 10px;
-            margin-top: 1px;
-            line-height: 1.2;
-        }
-        
-        .device-active-status {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 9px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            flex-shrink: 0;
-        }
-        
-        .device-active-status.active_now {
-            background: rgba(16, 185, 129, 0.15);
-            color: #10b981;
-        }
-        
-        .device-active-status.recent {
-            background: rgba(251, 191, 36, 0.15);
-            color: #fbbf24;
-        }
-        
-        .device-active-status.idle {
-            background: rgba(156, 163, 175, 0.15);
-            color: #9ca3af;
-        }
-        
-        .device-active-status.offline {
-            background: rgba(239, 68, 68, 0.15);
-            color: #ef4444;
-        }
-        
-        .device-query-rate {
-            color: var(--color-text-secondary);
-            font-size: 11px;
-            font-weight: 500;
         }
         
         .device-stats {
@@ -1178,42 +1130,10 @@
             applyFiltersAndSort();
         }
         
-        function formatTimeAgo(timestamp) {
-            if (!timestamp || timestamp === null || timestamp === 0) return "Never";
-            // Handle both Unix timestamp (seconds) and milliseconds
-            const ts = timestamp > 10000000000 ? Math.floor(timestamp / 1000) : timestamp;
-            const now = Math.floor(Date.now() / 1000);
-            const diff = now - ts;
-            if (diff < 0) return "Just now"; // Future timestamp
-            const seconds = diff;
-            if (seconds < 60) return `${seconds} sec ago`;
-            const minutes = Math.floor(seconds / 60);
-            if (minutes < 60) return `${minutes} min ago`;
-            const hours = Math.floor(minutes / 60);
-            if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-            const days = Math.floor(hours / 24);
-            return `${days} day${days > 1 ? 's' : ''} ago`;
-        }
-        
-        function getStatusText(status) {
-            const statusMap = {
-                'active_now': 'Active',
-                'recent': 'Recent',
-                'idle': 'Idle',
-                'offline': 'Offline'
-            };
-            return statusMap[status] || 'Unknown';
-        }
-        
         function renderDeviceCard(device) {
             const trackerPct = device.queries > 0 ? Math.round((device.trackers / device.queries) * 100) : 0;
             const isActive = device.queries > 0;
             const queriesShort = device.queries >= 1000 ? (device.queries / 1000).toFixed(1) + 'k' : device.queries.toLocaleString();
-            const lastActive = (device.last_query_time && device.last_query_time > 0) ? formatTimeAgo(device.last_query_time) : "Never";
-            const activeStatus = device.active_status || 'offline';
-            const statusText = getStatusText(activeStatus);
-            const queryRate = device.query_rate || 0;
-            const queryRateText = queryRate > 0 ? `${queryRate.toLocaleString()}/hr` : '0/hr';
             
             return `
                 <div class="device-card clickable" onclick="showDeviceDetails('${device.ip}')">
@@ -1221,12 +1141,8 @@
                     <div class="device-header">
                         <span class="device-icon">${device.icon || '🖥️'}</span>
                         <div class="device-info">
-                            <div class="device-name">
-                                <span>${device.name}</span>
-                                <span class="device-active-status ${activeStatus}">${statusText}</span>
-                            </div>
+                            <div class="device-name">${device.name}</div>
                             <div class="device-ip">${device.ip}</div>
-                            <div class="device-last-active">Last active: ${lastActive}</div>
                         </div>
                     </div>
                     <div class="device-stats">
@@ -1237,10 +1153,7 @@
                             </div>
                             <span class="tracker-badge">${device.trackers}</span>
                         </div>
-                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
-                            <span class="device-queries">${queriesShort} queries</span>
-                            <span class="device-query-rate">${queryRateText}</span>
-                        </div>
+                        <span class="device-queries">${queriesShort} queries</span>
                     </div>
                 </div>
             `;

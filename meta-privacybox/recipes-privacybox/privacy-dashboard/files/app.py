@@ -96,68 +96,6 @@ def get_device_icon(device_type):
     }
     return icon_map.get(device_type, '🖥️')
 
-def format_time_ago(timestamp):
-    """Format timestamp as relative time string"""
-    if not timestamp:
-        return "Never"
-    
-    now = datetime.now()
-    if isinstance(timestamp, int):
-        dt = datetime.fromtimestamp(timestamp)
-    else:
-        dt = timestamp
-    
-    diff = now - dt
-    seconds = int(diff.total_seconds())
-    
-    if seconds < 60:
-        return f"{seconds} sec ago"
-    elif seconds < 3600:
-        minutes = seconds // 60
-        return f"{minutes} min ago"
-    elif seconds < 86400:
-        hours = seconds // 3600
-        return f"{hours} hour{'s' if hours > 1 else ''} ago"
-    else:
-        days = seconds // 86400
-        return f"{days} day{'s' if days > 1 else ''} ago"
-
-def get_active_status(last_query_time):
-    """Determine active status based on last query time"""
-    if not last_query_time:
-        return "offline"
-    
-    now = datetime.now()
-    if isinstance(last_query_time, int):
-        dt = datetime.fromtimestamp(last_query_time)
-    else:
-        dt = last_query_time
-    
-    diff = now - dt
-    minutes = int(diff.total_seconds() / 60)
-    
-    if minutes < 5:
-        return "active_now"
-    elif minutes < 60:
-        return "recent"
-    elif minutes < 1440:  # 24 hours
-        return "idle"
-    else:
-        return "offline"
-
-def calculate_query_rate(cursor, device_ip):
-    """Calculate queries per hour from last 24 hours of activity"""
-    # Use last 24 hours to calculate average queries per hour
-    day_ago = int((datetime.now() - timedelta(hours=24)).timestamp())
-    cursor.execute("""
-        SELECT COUNT(*) 
-        FROM dns_queries 
-        WHERE device_ip = ? AND timestamp > ?
-    """, (device_ip, day_ago))
-    count = cursor.fetchone()[0]
-    # Return queries per hour (count / 24)
-    return round(count / 24) if count > 0 else 0
-
 @app.route('/')
 def index():
     """Main dashboard page"""
@@ -181,55 +119,13 @@ def get_devices():
         device_name = get_device_name(cursor, device_ip)
         device_type = get_device_type(device_name)
         device_icon = get_device_icon(device_type)
-        
-        # Get last query time from dns_queries, fallback to last_seen from devices table
-        cursor.execute("""
-            SELECT MAX(timestamp) 
-            FROM dns_queries 
-            WHERE device_ip = ?
-        """, (device_ip,))
-        last_query_row = cursor.fetchone()
-        last_query_time = last_query_row[0] if last_query_row and last_query_row[0] else None
-        
-        # If no queries, use last_seen from devices table as fallback
-        if not last_query_time:
-            # Get last_seen from devices table for this IP
-            cursor.execute("SELECT MAX(last_seen) FROM devices WHERE ip = ?", (device_ip,))
-            last_seen_row = cursor.fetchone()
-            if last_seen_row and last_seen_row[0]:
-                last_query_time = last_seen_row[0]
-        
-        # Calculate active status
-        active_status = get_active_status(last_query_time)
-        
-        # Calculate query rate (queries per hour)
-        query_rate = calculate_query_rate(cursor, device_ip)
-        
-        # Get query stats for last 24 hours
-        since = int((datetime.now() - timedelta(hours=24)).timestamp())
-        cursor.execute("""
-            SELECT 
-                COUNT(*) as total_queries,
-                SUM(CASE WHEN is_tracker = 1 THEN 1 ELSE 0 END) as tracker_queries
-            FROM dns_queries
-            WHERE device_ip = ? AND timestamp > ?
-        """, (device_ip, since))
-        stats = cursor.fetchone()
-        total_queries = stats[0] if stats else 0
-        tracker_queries = stats[1] if stats else 0
-        
         devices.append({
             'ip': device_ip,
             'mac': row[1],
             'name': device_name,
             'type': device_type,
             'icon': device_icon,
-            'last_seen': row[2],
-            'last_query_time': last_query_time,
-            'active_status': active_status,
-            'query_rate': query_rate,
-            'queries': total_queries,
-            'trackers': tracker_queries
+            'last_seen': row[2]
         })
     conn.close()
     return jsonify(devices)
