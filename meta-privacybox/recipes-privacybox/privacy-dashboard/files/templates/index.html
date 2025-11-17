@@ -5,39 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Box - Per-Device Tracking</title>
     <style>
-        /* CSS Variables - Premium Clean Dark Theme */
+        /* CSS Variables - Unified Color Palette & Design System */
         :root {
-            /* Primary Colors - Clean Blue */
-            --color-primary: #3b82f6;
-            --color-primary-dark: #2563eb;
-            --color-primary-light: #60a5fa;
-            --color-secondary: #6366f1;
+            /* Primary Colors */
+            --color-primary: #667eea;
+            --color-primary-dark: #5568d3;
+            --color-primary-light: #8b9ef0;
+            --color-secondary: #764ba2;
             
-            /* Neutral Colors - Professional Dark */
-            --color-bg: #0f172a;
-            --color-bg-secondary: #1e293b;
-            --color-bg-tertiary: #334155;
-            --color-text: #f1f5f9;
-            --color-text-secondary: #cbd5e1;
-            --color-text-tertiary: #94a3b8;
-            --color-border: #334155;
-            --color-border-light: #475569;
+            /* Neutral Colors */
+            --color-bg: #ffffff;
+            --color-bg-secondary: #f8f9fa;
+            --color-bg-tertiary: #f5f5f5;
+            --color-text: #1a1a1a;
+            --color-text-secondary: #4a4a4a;
+            --color-text-tertiary: #6b6b6b;
+            --color-border: #e0e0e0;
+            --color-border-light: #f0f0f0;
             
             /* Status Colors */
-            --color-tracker: #ef4444;
-            --color-tracker-bg: rgba(239, 68, 68, 0.15);
-            --color-tracker-border: rgba(239, 68, 68, 0.3);
-            --color-success: #10b981;
-            --color-error: #ef4444;
-            --color-error-bg: rgba(239, 68, 68, 0.15);
+            --color-tracker: #ff4444;
+            --color-tracker-bg: #ffebee;
+            --color-tracker-border: #ffcdd2;
+            --color-success: #4caf50;
+            --color-error: #c62828;
+            --color-error-bg: #ffebee;
             
-            /* Shadows - Clean Professional */
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5);
-            --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.6);
-            --shadow-primary: 0 4px 12px rgba(59, 130, 246, 0.2);
-            --shadow-primary-hover: 0 6px 16px rgba(59, 130, 246, 0.3);
+            /* Shadows - Consistent System */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.15);
+            --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+            --shadow-primary: 0 4px 12px rgba(102, 126, 234, 0.2);
+            --shadow-primary-hover: 0 6px 16px rgba(102, 126, 234, 0.3);
             
             /* Border Radius - Consistent System */
             --radius-sm: 4px;
@@ -63,7 +63,8 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #0f172a;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-attachment: fixed;
             color: var(--color-text);
             min-height: 100vh;
             padding: var(--spacing-md);
@@ -75,16 +76,20 @@
         }
         
         header {
-            background: var(--color-bg-secondary);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
             padding: var(--spacing-xl);
             border-radius: var(--radius-lg);
             margin-bottom: var(--spacing-xl);
             box-shadow: var(--shadow-lg);
-            border: 1px solid var(--color-border);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
         
         h1 {
-            color: var(--color-primary);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: var(--spacing-sm);
             font-weight: 700;
             font-size: 2.5em;
@@ -103,18 +108,36 @@
         }
         
         .stat-card {
-            background: var(--color-bg-secondary);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
             padding: var(--spacing-lg);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-md);
-            border: 1px solid var(--color-border);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
         
         .stat-card:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
-            border-color: var(--color-primary);
+        }
+        
+        .stat-card:hover::before {
+            opacity: 1;
         }
         
         .stat-label {
@@ -129,136 +152,92 @@
         .stat-value {
             font-size: 42px;
             font-weight: 700;
-            color: var(--color-primary);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             line-height: 1.2;
         }
         
         .devices-section {
-            background: var(--color-bg-secondary);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
             padding: var(--spacing-lg);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-lg);
             margin-bottom: var(--spacing-xl);
-            border: 1px solid var(--color-border);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
         }
         
         .device-card {
             border: 1px solid var(--color-border);
             border-radius: var(--radius-md);
             padding: var(--spacing-sm) var(--spacing-md);
-            margin-bottom: var(--spacing-sm);
+            margin-bottom: var(--spacing-xs);
             transition: all 0.3s ease;
-            background: var(--color-bg-tertiary);
-            display: grid;
-            grid-template-columns: auto 1fr auto;
+            background: var(--color-bg);
+            display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: var(--spacing-md);
         }
         
         .device-card:hover {
             border-color: var(--color-primary);
             box-shadow: var(--shadow-primary);
-            background: var(--color-bg-secondary);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
         }
         
         .device-header {
             display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 0;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0;
+            flex: 1;
         }
         
         .device-name {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 600;
             color: var(--color-text);
             display: flex;
             align-items: center;
-            gap: 6px;
-            white-space: nowrap;
+            gap: var(--spacing-xs);
+            margin-bottom: 2px;
         }
         
         .device-icon {
-            font-size: 16px;
+            font-size: 18px;
             display: inline-block;
-            flex-shrink: 0;
         }
         
         .device-ip {
             color: var(--color-text-tertiary);
-            font-size: 11px;
-            white-space: nowrap;
+            font-size: 12px;
         }
         
         .device-stats {
             display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
-            min-width: 0;
+            align-items: center;
+            gap: var(--spacing-md);
         }
         
         .device-queries {
             color: var(--color-text-secondary);
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 500;
-            white-space: nowrap;
-        }
-        
-        .device-tracker-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .tracker-percentage {
-            font-size: 11px;
-            color: var(--color-text-tertiary);
-            font-weight: 500;
-        }
-        
-        .tracker-bar {
-            width: 60px;
-            height: 4px;
-            background: var(--color-bg-tertiary);
-            border-radius: 2px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .tracker-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--color-tracker) 0%, #ff6b6b 100%);
-            border-radius: 2px;
-            transition: width 0.3s ease;
-        }
-        
-        .activity-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--color-success);
-            flex-shrink: 0;
-            box-shadow: 0 0 4px rgba(76, 175, 80, 0.5);
-        }
-        
-        .activity-indicator.inactive {
-            background: var(--color-text-tertiary);
-            box-shadow: none;
         }
         
         .tracker-badge {
             display: inline-block;
-            background: var(--color-tracker);
+            background: linear-gradient(135deg, var(--color-tracker) 0%, #ff6b6b 100%);
             color: white;
-            padding: 3px 8px;
+            padding: 4px var(--spacing-sm);
             border-radius: var(--radius-full);
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
             box-shadow: var(--shadow-sm);
             white-space: nowrap;
-            min-width: 20px;
-            text-align: center;
         }
         
         .tracker-list {
@@ -275,11 +254,12 @@
         }
         
         .realtime-section {
-            background: var(--color-bg-secondary);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
             padding: var(--spacing-lg);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-lg);
-            border: 1px solid var(--color-border);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
         }
         
         .realtime-item {
@@ -309,13 +289,14 @@
             position: fixed;
             top: var(--spacing-md);
             right: var(--spacing-md);
-            background: var(--color-bg-secondary);
+            background: rgba(255, 255, 255, 0.95);
             padding: var(--spacing-sm) var(--spacing-md);
             border-radius: var(--radius-md);
             font-size: 12px;
             color: var(--color-text-secondary);
             box-shadow: var(--shadow-md);
-            border: 1px solid var(--color-border);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--color-border-light);
         }
         
         .error-message {
@@ -355,12 +336,12 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0,0,0,0.5);
             overflow: auto;
         }
         
         .modal-content {
-            background: var(--color-bg-secondary);
+            background-color: var(--color-bg);
             margin: 5% auto;
             padding: var(--spacing-xl);
             border-radius: var(--radius-lg);
@@ -369,7 +350,7 @@
             max-height: 80vh;
             overflow-y: auto;
             box-shadow: var(--shadow-xl);
-            border: 1px solid var(--color-border);
+            border: 1px solid var(--color-border-light);
         }
         
         .close {
@@ -411,12 +392,12 @@
             border-radius: var(--radius-sm);
             cursor: pointer;
             transition: all 0.2s ease;
-            border: 1px solid var(--color-border);
+            border: 1px solid transparent;
         }
         
         .domain-item:hover {
             background: var(--color-bg-secondary);
-            border-color: var(--color-primary);
+            border-color: var(--color-border);
         }
         
         .domain-item.tracker {
@@ -639,278 +620,21 @@
         }
         
         @media (max-width: 768px) {
-            /* Body and container */
-            body {
-                padding: var(--spacing-sm);
-            }
-            
-            .container {
-                max-width: 100%;
-            }
-            
-            /* Header */
-            header {
-                padding: var(--spacing-md);
-                margin-bottom: var(--spacing-md);
-            }
-            
-            h1 {
-                font-size: 1.8em;
-            }
-            
-            .subtitle {
-                font-size: 14px;
-            }
-            
-            /* Stats grid */
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: var(--spacing-sm);
-                margin-bottom: var(--spacing-md);
-            }
-            
-            .stat-card {
-                padding: var(--spacing-md);
-            }
-            
-            .stat-value {
-                font-size: 32px;
-            }
-            
-            .stat-label {
-                font-size: 12px;
-            }
-            
-            /* Devices section */
-            .devices-section {
-                padding: var(--spacing-md);
-                margin-bottom: var(--spacing-md);
-            }
-            
             .devices-section > div:first-child {
                 flex-direction: column;
                 align-items: stretch !important;
-                gap: var(--spacing-sm);
-                margin-bottom: var(--spacing-md) !important;
             }
             
             .devices-section > div:first-child > div {
                 width: 100%;
             }
             
-            .devices-section h2 {
-                font-size: 1.3em;
-                margin-bottom: var(--spacing-sm);
-            }
-            
             #deviceSearch {
                 max-width: 100% !important;
-                width: 100%;
-                margin: 0 !important;
-            }
-            
-            .select-control {
-                width: 100%;
-                margin-bottom: var(--spacing-sm);
-            }
-            
-            /* Device cards */
-            .device-card {
-                padding: var(--spacing-sm) var(--spacing-md);
-                margin-bottom: var(--spacing-xs);
-            }
-            
-            .device-name {
-                font-size: 14px;
-            }
-            
-            .device-icon {
-                font-size: 16px;
-            }
-            
-            .device-ip {
-                font-size: 11px;
-            }
-            
-            .device-queries {
-                font-size: 11px;
-            }
-            
-            .tracker-badge {
-                font-size: 10px;
-                padding: 3px 6px;
-            }
-            
-            /* Top domains grid */
-            .top-domains-grid {
-                grid-template-columns: 1fr !important;
-                gap: var(--spacing-md) !important;
             }
             
             .devices-section > div:last-child {
                 grid-template-columns: 1fr !important;
-                gap: var(--spacing-md) !important;
-            }
-            
-            /* Top domains section */
-            .devices-section h3 {
-                font-size: 1.1em;
-                margin-bottom: var(--spacing-sm);
-                padding-bottom: var(--spacing-xs);
-            }
-            
-            /* Domain items */
-            .domain-item {
-                padding: var(--spacing-xs) var(--spacing-sm);
-            }
-            
-            .domain-item-header {
-                flex-wrap: wrap;
-                gap: var(--spacing-xs);
-            }
-            
-            .domain-item-header > div:first-child {
-                min-width: 0;
-                flex: 1 1 auto;
-            }
-            
-            .domain-item-header > div:last-child {
-                flex-shrink: 0;
-            }
-            
-            .domain-count {
-                font-size: 13px;
-            }
-            
-            .domain-count-label {
-                font-size: 10px;
-            }
-            
-            .domain-device-badge {
-                font-size: 10px;
-                padding: 2px 4px;
-            }
-            
-            /* Domain devices */
-            .domain-device-item {
-                padding: var(--spacing-xs);
-                font-size: 12px;
-            }
-            
-            .domain-device-name {
-                font-size: 12px;
-                gap: var(--spacing-xs);
-            }
-            
-            .domain-device-count {
-                font-size: 11px;
-            }
-            
-            /* Modal */
-            .modal-content {
-                width: 95%;
-                max-width: 95%;
-                padding: var(--spacing-md);
-                margin: 10% auto;
-            }
-            
-            .modal-section {
-                margin-bottom: var(--spacing-md);
-            }
-            
-            .modal-section h3 {
-                font-size: 1.1em;
-                margin-bottom: var(--spacing-sm);
-                padding-bottom: var(--spacing-xs);
-            }
-            
-            .stats-row {
-                grid-template-columns: repeat(2, 1fr);
-                gap: var(--spacing-sm);
-            }
-            
-            .stat-mini {
-                padding: var(--spacing-sm);
-            }
-            
-            .stat-mini-value {
-                font-size: 20px;
-            }
-            
-            .stat-mini-label {
-                font-size: 11px;
-            }
-            
-            /* Realtime section */
-            .realtime-section {
-                padding: var(--spacing-md);
-            }
-            
-            .realtime-section h2 {
-                font-size: 1.3em;
-                margin-bottom: var(--spacing-md);
-            }
-            
-            .realtime-item {
-                padding: var(--spacing-xs) var(--spacing-sm);
-                font-size: 12px;
-            }
-            
-            /* Refresh indicator */
-            .refresh-indicator {
-                top: var(--spacing-xs);
-                right: var(--spacing-xs);
-                padding: var(--spacing-xs) var(--spacing-sm);
-                font-size: 11px;
-            }
-            
-            /* Touch targets */
-            .device-card,
-            .domain-item,
-            .domain-device-name {
-                min-height: 44px;
-            }
-            
-            .close {
-                font-size: 32px;
-                padding: var(--spacing-xs);
-                min-width: 44px;
-                min-height: 44px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            /* Extra small screens */
-            body {
-                padding: var(--spacing-xs);
-            }
-            
-            header {
-                padding: var(--spacing-sm);
-            }
-            
-            h1 {
-                font-size: 1.5em;
-            }
-            
-            .stat-value {
-                font-size: 28px;
-            }
-            
-            .devices-section,
-            .realtime-section {
-                padding: var(--spacing-sm);
-            }
-            
-            .device-card {
-                padding: var(--spacing-xs) var(--spacing-sm);
-            }
-            
-            .stats-row {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -961,7 +685,7 @@
         
         <div class="devices-section">
             <h2 style="margin-bottom: 20px;">Network-Wide Top Domains</h2>
-            <div class="top-domains-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
                     <h3 style="color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Top Tracker Domains (24h)</h3>
                     <div id="topTrackersList" class="loading">Loading...</div>
@@ -1023,34 +747,23 @@
                 return;
             }
             
-            container.innerHTML = devices.map(device => {
-                const trackerPct = device.queries > 0 ? Math.round((device.trackers / device.queries) * 100) : 0;
-                const isActive = device.queries > 0;
-                const queriesShort = device.queries >= 1000 ? (device.queries / 1000).toFixed(1) + 'k' : device.queries.toLocaleString();
-                
-                return `
+            container.innerHTML = devices.map(device => `
                 <div class="device-card clickable" onclick="showDeviceDetails('${device.ip}')">
-                    <div class="activity-indicator ${isActive ? '' : 'inactive'}"></div>
                     <div class="device-header">
-                        <div class="device-name">
-                            <span class="device-icon">${device.icon || '🖥️'}</span>
-                            ${device.name}
+                        <div>
+                            <div class="device-name">
+                                <span class="device-icon">${device.icon || '🖥️'}</span>
+                                ${device.name}
+                            </div>
+                            <div class="device-ip">${device.ip}</div>
                         </div>
-                        <div class="device-ip">${device.ip}</div>
                     </div>
                     <div class="device-stats">
-                        <div class="device-tracker-info">
-                            <span class="tracker-percentage">${trackerPct}%</span>
-                            <div class="tracker-bar">
-                                <div class="tracker-bar-fill" style="width: ${trackerPct}%"></div>
-                            </div>
-                            <span class="tracker-badge">${device.trackers}</span>
-                        </div>
-                        <span class="device-queries">${queriesShort} queries</span>
+                        <span class="device-queries">${device.queries.toLocaleString()} queries</span>
+                        <span class="tracker-badge">${device.trackers} trackers</span>
                     </div>
                 </div>
-            `;
-            }).join('');
+            `).join('');
         }
         
         async function fetchRealtime() {

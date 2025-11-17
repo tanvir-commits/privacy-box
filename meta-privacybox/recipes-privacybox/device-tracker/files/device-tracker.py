@@ -193,16 +193,19 @@ class DeviceTracker:
             count = cursor.fetchone()[0]
             total_apple_queries += count
         
-        if total_apple_queries >= 5:
+        if total_apple_queries >= 3:  # Lower threshold - only need 3 Apple queries
             cursor.execute("""
                 SELECT COUNT(*) FROM dns_queries 
                 WHERE device_ip = ? AND timestamp > ?
             """, (ip, since))
             total_queries = cursor.fetchone()[0]
             
-            if total_apple_queries > 100:  # High Apple query volume = iPhone
+            # More lenient detection - check ratio of Apple queries
+            apple_ratio = total_apple_queries / max(total_queries, 1)
+            
+            if total_apple_queries > 50:  # High Apple query volume = iPhone
                 return "iPhone"
-            elif total_apple_queries >= 5 and total_queries < 200:  # Moderate Apple queries, low total = iPad
+            elif total_apple_queries >= 3 and (total_queries < 300 or apple_ratio > 0.1):  # Moderate Apple queries, or high ratio = iPad
                 return "iPad"
             else:
                 return "Apple Device"
@@ -513,11 +516,31 @@ class DeviceTracker:
                             1 if blocked else 0
                         ))
                         
-                        # Update device info
+                        # Update device info - but only if we have a better name
+                        # Check current name in database
+                        cursor.execute("SELECT name FROM devices WHERE ip = ?", (client_ip,))
+                        current_row = cursor.fetchone()
+                        current_name = current_row[0] if current_row else None
+                        new_name = device_info['name']
+                        
+                        # Only update if new name is better (not Device-XXX, or Unknown -> something)
+                        should_update_name = False
+                        if current_name in ('Unknown', None):
+                            should_update_name = True
+                        elif current_name and current_name.startswith('Device-') and not new_name.startswith('Device-'):
+                            should_update_name = True
+                        elif new_name in ('iPhone', 'iPad', 'iPod', 'Apple Device') and current_name not in ('iPhone', 'iPad', 'iPod', 'Apple Device'):
+                            should_update_name = True  # Always prefer specific device types
+                        elif new_name and not new_name.startswith('Device-') and (not current_name or current_name.startswith('Device-')):
+                            should_update_name = True
+                        
+                        # Use better name
+                        final_name = new_name if should_update_name else (current_name or new_name)
+                        
                         cursor.execute("""
                             INSERT OR REPLACE INTO devices (ip, mac, name, last_seen)
                             VALUES (?, ?, ?, ?)
-                        """, (client_ip, device_info['mac'], device_info['name'], int(time.time())))
+                        """, (client_ip, device_info['mac'], final_name, int(time.time())))
                         
                         self.db.commit()
                         
