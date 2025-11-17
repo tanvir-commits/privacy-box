@@ -203,9 +203,11 @@ class DeviceTracker:
             # More lenient detection - check ratio of Apple queries
             apple_ratio = total_apple_queries / max(total_queries, 1)
             
-            if total_apple_queries > 50:  # High Apple query volume = iPhone
+            # iPhone: High Apple query volume OR high ratio with many total queries
+            if total_apple_queries > 20 or (total_apple_queries >= 10 and total_queries > 200):
                 return "iPhone"
-            elif total_apple_queries >= 3 and (total_queries < 300 or apple_ratio > 0.1):  # Moderate Apple queries, or high ratio = iPad
+            # iPad: Moderate Apple queries with lower total OR high ratio
+            elif total_apple_queries >= 3 and (total_queries < 250 or (apple_ratio > 0.15 and total_queries < 500)):
                 return "iPad"
             else:
                 return "Apple Device"
