@@ -8,9 +8,17 @@ A privacy-focused network device that provides per-device DNS query tracking, vi
 
 - 🔍 **Per-Device Tracking**: See exactly which device on your network is making which DNS queries
 - 📊 **Real-Time Dashboard**: Beautiful web interface showing device activity, tracker queries, and statistics
+  - Device detail modal with comprehensive stats and domain lists
+  - Search and sort devices by name, queries, or trackers
+  - Network-wide top domains and tracker domains
 - 🛡️ **Tracker Detection**: Automatically identifies and can block known tracking domains
 - 🔌 **Plug-and-Play**: Acts as DHCP server and DNS forwarder - just connect to your network
 - 📱 **Mobile Responsive**: Dashboard works on desktop and mobile devices
+- 🏷️ **Smart Device Identification**: 
+  - IEEE OUI database (4,262 vendor entries) for MAC-based identification
+  - DHCP hostname parsing for device type detection (iPhone, iPad, etc.)
+  - DNS pattern analysis for device identification even with randomized MACs
+  - Automatic device name resolution and updates
 
 ## Hardware
 
@@ -87,12 +95,19 @@ Python service that:
 - Stores per-device query data in SQLite database
 - Identifies tracker domains using keyword matching
 - Provides REST API for dashboard
+- **Device Identification Features**:
+  - MAC OUI lookup using IEEE registry (4,262 entries)
+  - DHCP hostname parsing (iPhone, iPad, Android, Windows)
+  - DNS pattern detection for Apple, Android, and Windows devices
+  - Automatic device name resolution and updates
 
 ### privacy-dashboard
 Flask web application providing:
 - Real-time per-device DNS query visualization
 - Network-wide statistics (total queries, trackers, blocked)
-- Device-specific tracking details
+- Device-specific tracking details with detail modal
+- Search and sort functionality for devices
+- Network-wide top domains and tracker domains
 - Beautiful, modern UI with mobile support
 - RESTful API endpoints
 
