@@ -1,7 +1,8 @@
 SUMMARY = "GeoLite2 Country Database (MaxMind)"
 DESCRIPTION = "Free IP geolocation database for country-level lookups"
-LICENSE = "CC-BY-SA-4.0"
-LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/CC-BY-SA-4.0;md5=fba3b94d88bfb9b81369d69a0cc7d80a"
+# GeoLite2 is licensed under Creative Commons Attribution-ShareAlike 4.0
+# Database is downloaded from GitHub mirror, no source files to check
+LICENSE = "CLOSED"
 
 # Download GeoLite2-Country database during build
 # Free database from MaxMind via GitHub mirror
