@@ -315,12 +315,32 @@
             backdrop-filter: blur(10px);
         }
         
+        .realtime-section h2 {
+            margin-bottom: var(--spacing-lg);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+        
         .realtime-item {
-            padding: var(--spacing-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
             border-left: 3px solid var(--color-primary);
             margin-bottom: var(--spacing-sm);
-            background: var(--color-bg-secondary);
+            background: var(--color-bg);
             border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .realtime-item:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateX(2px);
         }
         
         .realtime-item.tracker {
@@ -330,6 +350,59 @@
         
         .realtime-item.blocked {
             opacity: 0.6;
+        }
+        
+        .realtime-icon {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .realtime-content {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .realtime-device {
+            font-weight: 600;
+            color: var(--color-text);
+            white-space: nowrap;
+        }
+        
+        .realtime-arrow {
+            color: var(--color-text-tertiary);
+            font-weight: 300;
+        }
+        
+        .realtime-domain {
+            color: var(--color-text);
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .realtime-time {
+            color: var(--color-text-tertiary);
+            font-size: 12px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+        
+        .realtime-blocked {
+            color: var(--color-tracker);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            margin-left: var(--spacing-xs);
         }
         
         .loading {
@@ -1018,7 +1091,7 @@
         </div>
         
         <div class="realtime-section">
-            <h2 style="margin-bottom: 20px;">Real-time Activity</h2>
+            <h2>Real-time Activity</h2>
             <div id="realtimeList" class="loading">Waiting for activity...</div>
         </div>
     </div>
@@ -1107,12 +1180,14 @@
                     
                     return `
                         <div class="${classes.join(' ')}">
-                            <strong>
-                                <span class="device-icon">${query.device_icon || '🖥️'}</span>
-                                ${query.device_name}
-                            </strong> → ${query.domain}
-                            ${query.blocked ? ' <span style="color: #ff4444;">[BLOCKED]</span>' : ''}
-                            <span style="float: right; color: #999; font-size: 12px;">${timeStr}</span>
+                            <span class="realtime-icon">${query.device_icon || '🖥️'}</span>
+                            <div class="realtime-content">
+                                <span class="realtime-device">${query.device_name}</span>
+                                <span class="realtime-arrow">→</span>
+                                <span class="realtime-domain" title="${query.domain}">${query.domain}</span>
+                                ${query.blocked ? '<span class="realtime-blocked">[BLOCKED]</span>' : ''}
+                            </div>
+                            <span class="realtime-time">${timeStr}</span>
                         </div>
                     `;
                 }).join('');
