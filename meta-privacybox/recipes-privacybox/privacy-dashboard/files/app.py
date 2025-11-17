@@ -324,7 +324,7 @@ def get_realtime():
 
 @app.route('/api/network/top-domains')
 def get_top_domains():
-    """Get network-wide top domains and trackers"""
+    """Get network-wide top domains and trackers with device breakdown"""
     conn = get_db()
     cursor = conn.cursor()
     
@@ -340,7 +340,44 @@ def get_top_domains():
         LIMIT 30
     """, (since,))
     
-    top_domains = [{'domain': row[0], 'count': row[1]} for row in cursor.fetchall()]
+    top_domains_raw = cursor.fetchall()
+    top_domains = []
+    
+    # For each domain, get device breakdown
+    for row in top_domains_raw:
+        domain = row[0]
+        total_count = row[1]
+        
+        # Get devices that queried this domain
+        cursor.execute("""
+            SELECT device_ip, COUNT(*) as device_count
+            FROM dns_queries
+            WHERE domain = ? AND timestamp > ?
+            GROUP BY device_ip
+            ORDER BY device_count DESC
+        """, (domain, since))
+        
+        devices = []
+        for device_row in cursor.fetchall():
+            device_ip = device_row[0]
+            device_count = device_row[1]
+            device_name = get_device_name(cursor, device_ip)
+            device_type = get_device_type(device_name)
+            device_icon = get_device_icon(device_type)
+            
+            devices.append({
+                'ip': device_ip,
+                'name': device_name,
+                'type': device_type,
+                'icon': device_icon,
+                'count': device_count
+            })
+        
+        top_domains.append({
+            'domain': domain,
+            'count': total_count,
+            'devices': devices
+        })
     
     # Get top tracker domains
     cursor.execute("""
@@ -352,7 +389,44 @@ def get_top_domains():
         LIMIT 30
     """, (since,))
     
-    top_trackers = [{'domain': row[0], 'count': row[1]} for row in cursor.fetchall()]
+    top_trackers_raw = cursor.fetchall()
+    top_trackers = []
+    
+    # For each tracker domain, get device breakdown
+    for row in top_trackers_raw:
+        domain = row[0]
+        total_count = row[1]
+        
+        # Get devices that queried this tracker domain
+        cursor.execute("""
+            SELECT device_ip, COUNT(*) as device_count
+            FROM dns_queries
+            WHERE domain = ? AND is_tracker = 1 AND timestamp > ?
+            GROUP BY device_ip
+            ORDER BY device_count DESC
+        """, (domain, since))
+        
+        devices = []
+        for device_row in cursor.fetchall():
+            device_ip = device_row[0]
+            device_count = device_row[1]
+            device_name = get_device_name(cursor, device_ip)
+            device_type = get_device_type(device_name)
+            device_icon = get_device_icon(device_type)
+            
+            devices.append({
+                'ip': device_ip,
+                'name': device_name,
+                'type': device_type,
+                'icon': device_icon,
+                'count': device_count
+            })
+        
+        top_trackers.append({
+            'domain': domain,
+            'count': total_count,
+            'devices': devices
+        })
     
     conn.close()
     
