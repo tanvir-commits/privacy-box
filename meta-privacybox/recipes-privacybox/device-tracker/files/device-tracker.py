@@ -111,21 +111,33 @@ class DeviceTracker:
         
         hostname_lower = hostname.lower()
         
-        # Check for iPhone (most common patterns)
+        # Apple devices
         if 'iphone' in hostname_lower:
             return 'iPhone'
-        
-        # Check for iPad
         if 'ipad' in hostname_lower:
             return 'iPad'
-        
-        # Check for iPod
         if 'ipod' in hostname_lower:
             return 'iPod'
-        
-        # Check for generic Apple device indicators
         if 'apple' in hostname_lower and ('device' in hostname_lower or 'mac' in hostname_lower):
             return 'Apple Device'
+        
+        # Android devices
+        if 'android' in hostname_lower:
+            if 'tablet' in hostname_lower:
+                return 'Android Tablet'
+            return 'Android Device'
+        if any(brand in hostname_lower for brand in ['samsung', 'pixel', 'oneplus', 'xiaomi', 'huawei', 'oppo', 'vivo']):
+            return 'Android Device'
+        
+        # Windows devices
+        if 'windows' in hostname_lower:
+            if 'laptop' in hostname_lower or 'notebook' in hostname_lower:
+                return 'Windows Laptop'
+            if 'desktop' in hostname_lower or 'pc' in hostname_lower:
+                return 'Windows PC'
+            return 'Windows Device'
+        if 'pc' in hostname_lower or 'desktop' in hostname_lower or 'laptop' in hostname_lower:
+            return 'Windows Device'
         
         return None
     
@@ -165,19 +177,11 @@ class DeviceTracker:
         except Exception as e:
             print(f"Error parsing leases: {e}")
     
-    def resolve_device_name(self, ip, mac):
-        """Try to resolve device name from various sources"""
-        # Priority 1: Check DHCP hostname (if available in cache)
-        if ip in self.device_cache:
-            cached_name = self.device_cache[ip].get('name')
-            # If cached name is a device type (iPhone, iPad, etc.), use it
-            if cached_name and any(keyword in cached_name.lower() for keyword in ['iphone', 'ipad', 'ipod', 'apple']):
-                return cached_name
+    def detect_device_from_dns_patterns(self, ip, cursor):
+        """Detect device type from DNS query patterns (works even with randomized MACs)"""
+        since = int(time.time()) - (7 * 24 * 60 * 60)  # Last 7 days
         
-        # Priority 2: Check DNS query patterns to identify device type (works even with randomized MACs)
-        cursor = self.db.cursor()
-        
-        # Apple device detection (iCloud, Apple DNS, etc.)
+        # Apple device detection
         apple_domains = ['icloud.com', 'apple-dns.net', 'apple.com', 'appleid.apple.com', 
                         'apple-cloudkit.com', 'mzstatic.com', 'apple-mapkit.com']
         total_apple_queries = 0
@@ -185,30 +189,95 @@ class DeviceTracker:
             cursor.execute("""
                 SELECT COUNT(*) FROM dns_queries 
                 WHERE device_ip = ? AND domain LIKE ? AND timestamp > ?
-            """, (ip, f'%{domain}%', int(time.time()) - (7 * 24 * 60 * 60)))  # Last 7 days
+            """, (ip, f'%{domain}%', since))
             count = cursor.fetchone()[0]
             total_apple_queries += count
         
-        if total_apple_queries >= 5:  # If device queries Apple domains frequently, it's likely Apple
-            # Get total query count to help distinguish iPad (less active) from iPhone
+        if total_apple_queries >= 5:
             cursor.execute("""
                 SELECT COUNT(*) FROM dns_queries 
                 WHERE device_ip = ? AND timestamp > ?
-            """, (ip, int(time.time()) - (7 * 24 * 60 * 60)))
+            """, (ip, since))
             total_queries = cursor.fetchone()[0]
             
-            # Determine device type based on query patterns
-            # iPads typically have lower overall query volume than iPhones
-            if 'iphone' in str(ip).lower():
-                return "iPhone"
-            elif 'ipad' in str(ip).lower():
-                return "iPad"
-            elif total_apple_queries > 100:  # High Apple query volume = iPhone
+            if total_apple_queries > 100:  # High Apple query volume = iPhone
                 return "iPhone"
             elif total_apple_queries >= 5 and total_queries < 200:  # Moderate Apple queries, low total = iPad
                 return "iPad"
             else:
                 return "Apple Device"
+        
+        # Android device detection
+        android_domains = ['android.googleapis.com', 'gstatic.com', 'googleapis.com', 
+                          'google.com', 'android.com', 'googletagmanager.com', 'gmail.com',
+                          'googleusercontent.com', 'googleplay.com', 'android.clients.google.com']
+        total_android_queries = 0
+        for domain in android_domains:
+            cursor.execute("""
+                SELECT COUNT(*) FROM dns_queries 
+                WHERE device_ip = ? AND domain LIKE ? AND timestamp > ?
+            """, (ip, f'%{domain}%', since))
+            count = cursor.fetchone()[0]
+            total_android_queries += count
+        
+        if total_android_queries >= 5:
+            cursor.execute("""
+                SELECT COUNT(*) FROM dns_queries 
+                WHERE device_ip = ? AND timestamp > ?
+            """, (ip, since))
+            total_queries = cursor.fetchone()[0]
+            
+            # Android phones typically have higher query volume than tablets
+            if total_android_queries > 50 and total_queries > 300:
+                return "Android Phone"
+            elif total_android_queries >= 5 and total_queries < 200:
+                return "Android Tablet"
+            else:
+                return "Android Device"
+        
+        # Windows device detection
+        windows_domains = ['microsoft.com', 'windowsupdate.com', 'microsoftonline.com', 
+                          'live.com', 'outlook.com', 'office.com', 'office365.com',
+                          'microsoftedge.com', 'bing.com', 'onedrive.com', 'skype.com']
+        total_windows_queries = 0
+        for domain in windows_domains:
+            cursor.execute("""
+                SELECT COUNT(*) FROM dns_queries 
+                WHERE device_ip = ? AND domain LIKE ? AND timestamp > ?
+            """, (ip, f'%{domain}%', since))
+            count = cursor.fetchone()[0]
+            total_windows_queries += count
+        
+        if total_windows_queries >= 5:
+            cursor.execute("""
+                SELECT COUNT(*) FROM dns_queries 
+                WHERE device_ip = ? AND timestamp > ?
+            """, (ip, since))
+            total_queries = cursor.fetchone()[0]
+            
+            # Windows devices typically have high query volume
+            if total_windows_queries > 30 and total_queries > 500:
+                return "Windows PC"
+            elif total_windows_queries >= 5:
+                return "Windows Device"
+        
+        return None
+    
+    def resolve_device_name(self, ip, mac):
+        """Try to resolve device name from various sources"""
+        # Priority 1: Check DHCP hostname (if available in cache)
+        if ip in self.device_cache:
+            cached_name = self.device_cache[ip].get('name')
+            # If cached name is a device type, use it
+            if cached_name and any(keyword in cached_name.lower() for keyword in 
+                                  ['iphone', 'ipad', 'ipod', 'apple', 'android', 'windows', 'pc', 'laptop']):
+                return cached_name
+        
+        # Priority 2: Check DNS query patterns to identify device type (works even with randomized MACs)
+        cursor = self.db.cursor()
+        dns_pattern_result = self.detect_device_from_dns_patterns(ip, cursor)
+        if dns_pattern_result:
+            return dns_pattern_result
         
         # Priority 3: Try reverse DNS (with timeout)
         try:
@@ -221,8 +290,8 @@ class DeviceTracker:
                 device_type = self.extract_device_type_from_hostname(name)
                 if device_type:
                     return device_type
-                # Check for Apple device names in hostname
-                if any(keyword in name.lower() for keyword in ['iphone', 'ipad', 'ipod', 'apple']):
+                # Check for device type names in hostname
+                if any(keyword in name.lower() for keyword in ['iphone', 'ipad', 'ipod', 'apple', 'android', 'windows', 'pc', 'laptop']):
                     return name
                 if name and name != ip:
                     return name

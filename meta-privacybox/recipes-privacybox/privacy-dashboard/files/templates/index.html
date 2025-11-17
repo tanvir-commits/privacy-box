@@ -100,6 +100,14 @@
             font-size: 20px;
             font-weight: bold;
             color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .device-icon {
+            font-size: 24px;
+            display: inline-block;
         }
         
         .device-ip {
@@ -442,7 +450,10 @@
                 <div class="device-card clickable" onclick="showDeviceDetails('${device.ip}')">
                     <div class="device-header">
                         <div>
-                            <div class="device-name">${device.name}</div>
+                            <div class="device-name">
+                                <span class="device-icon">${device.icon || '🖥️'}</span>
+                                ${device.name}
+                            </div>
                             <div class="device-ip">${device.ip}</div>
                         </div>
                         <span class="tracker-badge">${device.trackers} trackers</span>
@@ -475,7 +486,10 @@
                     
                     return `
                         <div class="${classes.join(' ')}">
-                            <strong>${query.device_name}</strong> → ${query.domain}
+                            <strong>
+                                <span class="device-icon">${query.device_icon || '🖥️'}</span>
+                                ${query.device_name}
+                            </strong> → ${query.domain}
                             ${query.blocked ? ' <span style="color: #ff4444;">[BLOCKED]</span>' : ''}
                             <span style="float: right; color: #999; font-size: 12px;">${timeStr}</span>
                         </div>
@@ -578,7 +592,10 @@
                 `).join('');
                 
                 document.getElementById('modalContent').innerHTML = `
-                    <h2>${data.device.name}</h2>
+                    <h2>
+                        <span class="device-icon">${data.device.icon || '🖥️'}</span>
+                        ${data.device.name}
+                    </h2>
                     <p style="color: #666; margin-bottom: 20px;">
                         IP: ${data.device.ip} | MAC: ${data.device.mac || 'Unknown'}
                     </p>

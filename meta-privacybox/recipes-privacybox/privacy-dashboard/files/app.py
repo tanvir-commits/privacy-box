@@ -46,6 +46,56 @@ def get_device_name(cursor, ip):
     
     return 'Unknown'
 
+def get_device_type(device_name):
+    """Determine device type from device name"""
+    if not device_name or device_name == 'Unknown':
+        return 'unknown'
+    
+    name_lower = device_name.lower()
+    
+    # Apple devices
+    if 'iphone' in name_lower:
+        return 'iphone'
+    if 'ipad' in name_lower:
+        return 'ipad'
+    if 'ipod' in name_lower:
+        return 'ipod'
+    if 'apple' in name_lower:
+        return 'apple'
+    
+    # Android devices
+    if 'android phone' in name_lower:
+        return 'android-phone'
+    if 'android tablet' in name_lower:
+        return 'android-tablet'
+    if 'android' in name_lower:
+        return 'android'
+    
+    # Windows devices
+    if 'windows pc' in name_lower or 'windows laptop' in name_lower:
+        return 'windows-pc'
+    if 'windows' in name_lower:
+        return 'windows'
+    
+    return 'generic'
+
+def get_device_icon(device_type):
+    """Get icon emoji for device type"""
+    icon_map = {
+        'iphone': '📱',
+        'ipad': '📱',
+        'ipod': '🎵',
+        'apple': '🍎',
+        'android-phone': '📱',
+        'android-tablet': '📱',
+        'android': '🤖',
+        'windows-pc': '💻',
+        'windows': '🪟',
+        'generic': '🖥️',
+        'unknown': '❓'
+    }
+    return icon_map.get(device_type, '🖥️')
+
 @app.route('/')
 def index():
     """Main dashboard page"""
@@ -67,10 +117,14 @@ def get_devices():
         device_ip = row[0]
         # Get most up-to-date device name
         device_name = get_device_name(cursor, device_ip)
+        device_type = get_device_type(device_name)
+        device_icon = get_device_icon(device_type)
         devices.append({
             'ip': device_ip,
             'mac': row[1],
             'name': device_name,
+            'type': device_type,
+            'icon': device_icon,
             'last_seen': row[2]
         })
     conn.close()
@@ -90,6 +144,8 @@ def get_device_stats(ip):
     
     # Get most up-to-date device name
     device_name = get_device_name(cursor, ip)
+    device_type = get_device_type(device_name)
+    device_icon = get_device_icon(device_type)
     
     # Get query stats (last 24 hours)
     since = int((datetime.now() - timedelta(hours=24)).timestamp())
@@ -154,7 +210,9 @@ def get_device_stats(ip):
         'device': {
             'ip': ip,
             'mac': device_info[0],
-            'name': device_name
+            'name': device_name,
+            'type': device_type,
+            'icon': device_icon
         },
         'stats': {
             'total_queries': stats[0] or 0,
@@ -204,9 +262,13 @@ def get_network_stats():
         device_ip = row[0]
         # Get most up-to-date device name
         device_name = get_device_name(cursor, device_ip)
+        device_type = get_device_type(device_name)
+        device_icon = get_device_icon(device_type)
         devices.append({
             'ip': device_ip,
             'name': device_name,
+            'type': device_type,
+            'icon': device_icon,
             'queries': row[1],
             'trackers': row[2]
         })
@@ -244,9 +306,13 @@ def get_realtime():
         device_ip = row[0]
         # Get most up-to-date device name
         device_name = get_device_name(cursor, device_ip)
+        device_type = get_device_type(device_name)
+        device_icon = get_device_icon(device_type)
         queries.append({
             'device_ip': device_ip,
             'device_name': device_name,
+            'device_type': device_type,
+            'device_icon': device_icon,
             'domain': row[2],
             'is_tracker': bool(row[3]),
             'blocked': bool(row[4]),
