@@ -214,6 +214,9 @@
             font-weight: 600;
             color: var(--color-text);
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .device-ip {
@@ -1214,7 +1217,7 @@
                         <span class="device-icon">${device.icon || '🖥️'}</span>
                         <div class="device-info">
                             <div class="device-name">
-                                ${device.name}
+                                <span>${device.name}</span>
                                 <span class="device-active-status ${activeStatus}">${statusText}</span>
                             </div>
                             <div class="device-ip">${device.ip}</div>

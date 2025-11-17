@@ -180,7 +180,7 @@ def get_devices():
         device_type = get_device_type(device_name)
         device_icon = get_device_icon(device_type)
         
-        # Get last query time from dns_queries
+        # Get last query time from dns_queries, fallback to last_seen from devices table
         cursor.execute("""
             SELECT MAX(timestamp) 
             FROM dns_queries 
@@ -188,6 +188,10 @@ def get_devices():
         """, (device_ip,))
         last_query_row = cursor.fetchone()
         last_query_time = last_query_row[0] if last_query_row and last_query_row[0] else None
+        
+        # If no queries, use last_seen from devices table as fallback
+        if not last_query_time and row[2]:
+            last_query_time = row[2]
         
         # Calculate active status
         active_status = get_active_status(last_query_time)
