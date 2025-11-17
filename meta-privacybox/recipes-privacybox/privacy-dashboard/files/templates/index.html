@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Privacy Box - Per-Device Tracking</title>
     <style>
         /* CSS Variables - Unified Color Palette & Design System */
@@ -142,11 +145,17 @@
         }
         
         .section {
-            display: none;
+            display: block;
+            min-height: 100px;
+        }
+        
+        .section:not(.active) {
+            display: none !important;
         }
         
         .section.active {
-            display: block;
+            display: block !important;
+            min-height: 100px !important;
         }
         
         .container {
@@ -603,14 +612,36 @@
         }
         
         .country-code {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--color-primary);
-            min-width: 60px;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            min-width: 180px;
             padding: var(--spacing-sm);
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-            border-radius: var(--radius-md);
+        }
+        
+        .country-flag {
+            font-size: 32px;
+            line-height: 1;
+        }
+        
+        .country-code-text {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .country-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text);
+            line-height: 1.2;
+        }
+        
+        .country-code-small {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .country-stats {
@@ -1285,14 +1316,14 @@
         </div>
         
         <!-- Dashboard Section -->
-        <div id="dashboard-section" class="section active">
+        <div id="dashboard-section" class="section active" style="display: block;">
             <div class="container">
                 <header>
                     <h1>🔒 Privacy Box</h1>
                     <p class="subtitle">See what each device is actually doing</p>
                 </header>
-        
-        <div class="stats-grid" id="networkStats">
+                
+                <div class="stats-grid" id="networkStats">
             <div class="stat-card privacy-score-card" id="privacyScoreCard">
                 <div class="stat-label">Privacy Score</div>
                 <div class="stat-value privacy-score-value" id="privacyScore">-</div>
@@ -1316,21 +1347,21 @@
             </div>
         </div>
         
-        
-        <div class="devices-section">
-            <h2 style="margin-bottom: 20px;">Network-Wide Top Domains</h2>
-            <div class="top-domains-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div>
-                    <h3 style="color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Top Tracker Domains (24h)</h3>
-                    <div id="topTrackersList" class="loading">Loading...</div>
-                </div>
-                <div>
-                    <h3 style="color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Top Domains (24h)</h3>
-                    <div id="topDomainsList" class="loading">Loading...</div>
+                <div class="devices-section">
+                    <h2 style="margin-bottom: 20px;">Network-Wide Top Domains</h2>
+                    <div class="top-domains-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h3 style="color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Top Tracker Domains (24h)</h3>
+                            <div id="topTrackersList" class="loading">Loading...</div>
+                        </div>
+                        <div>
+                            <h3 style="color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Top Domains (24h)</h3>
+                            <div id="topDomainsList" class="loading">Loading...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        
         
         <!-- Devices Section -->
         <div id="devices-section" class="section">
@@ -1351,7 +1382,9 @@
                             <input type="text" id="deviceSearch" class="search-box" placeholder="Search devices..." style="max-width: 300px; margin: 0;">
                         </div>
                     </div>
-                    <div id="devicesList" class="loading">Loading devices...</div>
+                    <div id="devicesList">
+                        <!-- Devices will be loaded here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -1365,9 +1398,11 @@
                 </header>
                 <div class="devices-section">
                     <div class="stats-grid" id="geolocationStats" style="margin-bottom: 30px;">
-                        <div class="loading">Loading geolocation stats...</div>
+                        <!-- Content will be loaded here -->
                     </div>
-                    <div id="geolocationCountries" class="loading">Loading countries...</div>
+                    <div id="geolocationCountries">
+                        <!-- Content will be loaded here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -1380,7 +1415,9 @@
                     <p class="subtitle">Live DNS query feed</p>
                 </header>
                 <div class="realtime-section">
-                    <div id="realtimeList" class="loading">Waiting for activity...</div>
+                    <div id="realtimeList">
+                        <!-- Activity will be loaded here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -1412,29 +1449,52 @@
                 }
                 const data = await response.json();
                 
-                // Update network stats
-                document.getElementById('deviceCount').textContent = data.network.device_count;
-                document.getElementById('trackerQueries').textContent = data.network.tracker_queries.toLocaleString();
-                document.getElementById('blockedQueries').textContent = data.network.blocked_queries.toLocaleString();
-                document.getElementById('totalQueries').textContent = data.network.total_queries.toLocaleString();
+                // Update network stats (only if dashboard section is visible)
+                const deviceCountEl = document.getElementById('deviceCount');
+                if (deviceCountEl) {
+                    deviceCountEl.textContent = data.network.device_count;
+                }
+                const trackerQueriesEl = document.getElementById('trackerQueries');
+                if (trackerQueriesEl) {
+                    trackerQueriesEl.textContent = data.network.tracker_queries.toLocaleString();
+                }
+                const blockedQueriesEl = document.getElementById('blockedQueries');
+                if (blockedQueriesEl) {
+                    blockedQueriesEl.textContent = data.network.blocked_queries.toLocaleString();
+                }
+                const totalQueriesEl = document.getElementById('totalQueries');
+                if (totalQueriesEl) {
+                    totalQueriesEl.textContent = data.network.total_queries.toLocaleString();
+                }
                 
-                // Update privacy score
-                const privacyScore = data.network.privacy_score || 0;
-                const privacyColor = data.network.privacy_color || 'privacy-moderate';
-                document.getElementById('privacyScore').textContent = privacyScore;
-                document.getElementById('privacyScore').className = `stat-value privacy-score-value ${privacyColor}`;
-                document.getElementById('privacyScoreLabel').textContent = getPrivacyScoreLabel(privacyScore);
-                document.getElementById('privacyScoreLabel').className = `privacy-score-label ${privacyColor}`;
+                // Update privacy score (only if dashboard section is visible)
+                const privacyScoreEl = document.getElementById('privacyScore');
+                if (privacyScoreEl) {
+                    const privacyScore = data.network.privacy_score || 0;
+                    const privacyColor = data.network.privacy_color || 'privacy-moderate';
+                    privacyScoreEl.textContent = privacyScore;
+                    privacyScoreEl.className = `stat-value privacy-score-value ${privacyColor}`;
+                    const privacyScoreLabelEl = document.getElementById('privacyScoreLabel');
+                    if (privacyScoreLabelEl) {
+                        privacyScoreLabelEl.textContent = getPrivacyScoreLabel(privacyScore);
+                        privacyScoreLabelEl.className = `privacy-score-label ${privacyColor}`;
+                    }
+                }
                 
-                // Update devices list
+                // Update devices list (always update for devices section)
                 updateDevicesList(data.devices);
                 
                 // Update last refresh time
-                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                const lastUpdateEl = document.getElementById('lastUpdate');
+                if (lastUpdateEl) {
+                    lastUpdateEl.textContent = new Date().toLocaleTimeString();
+                }
             } catch (error) {
                 console.error('Error fetching network stats:', error);
                 const container = document.getElementById('devicesList');
-                container.innerHTML = `<div class="error-message">Error loading data: ${error.message}</div>`;
+                if (container) {
+                    container.innerHTML = `<div class="error-message">Error loading data: ${error.message}</div>`;
+                }
             }
         }
         
@@ -1442,7 +1502,7 @@
             // Always update allDevices array for search functionality
             allDevices = devices;
             
-            // Apply current search and sort filters
+            // Apply filters and sort
             applyFiltersAndSort();
         }
         
@@ -1481,11 +1541,20 @@
         }
         
         async function fetchRealtime() {
+            console.log('fetchRealtime called');
             try {
                 const response = await fetch('/api/realtime');
                 const queries = await response.json();
+                console.log('Realtime queries:', queries.length);
                 
                 const container = document.getElementById('realtimeList');
+                console.log('realtimeList container found:', !!container);
+                if (!container) {
+                    // Retry if container not found yet
+                    console.log('Container not found, retrying');
+                    setTimeout(fetchRealtime, 100);
+                    return;
+                }
                 
                 if (queries.length === 0) {
                     container.innerHTML = '<div class="loading">No recent activity</div>';
@@ -1514,6 +1583,10 @@
                 }).join('');
             } catch (error) {
                 console.error('Error fetching realtime:', error);
+                const container = document.getElementById('realtimeList');
+                if (container) {
+                    container.innerHTML = `<div class="error-message">Error loading activity: ${error.message}</div>`;
+                }
             }
         }
         
@@ -1521,26 +1594,40 @@
         let allDevices = [];
         let currentSort = 'trackers';
         
-        document.getElementById('deviceSearch').addEventListener('input', function(e) {
-            applyFiltersAndSort();
-        });
-        
-        document.getElementById('deviceSort').addEventListener('change', function(e) {
-            currentSort = e.target.value;
-            applyFiltersAndSort();
-        });
+        // Set up event listeners when DOM is ready
+        function setupDeviceSearchListeners() {
+            const searchInput = document.getElementById('deviceSearch');
+            const sortInput = document.getElementById('deviceSort');
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    applyFiltersAndSort();
+                });
+            }
+            
+            if (sortInput) {
+                sortInput.addEventListener('change', function(e) {
+                    currentSort = e.target.value;
+                    applyFiltersAndSort();
+                });
+            }
+        }
         
         function applyFiltersAndSort() {
             const container = document.getElementById('devicesList');
+            if (!container) {
+                return; // Container not found, skip rendering
+            }
+            
             const searchInput = document.getElementById('deviceSearch');
             
             // Get search term (handle case where input might not exist yet)
             const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
             
             // Filter devices
-            let filtered = allDevices;
-            if (searchTerm) {
-                filtered = allDevices.filter(device => {
+            let filtered = allDevices || [];
+            if (searchTerm && filtered.length > 0) {
+                filtered = filtered.filter(device => {
                     const nameMatch = device.name && device.name.toLowerCase().includes(searchTerm);
                     const ipMatch = device.ip && device.ip.includes(searchTerm);
                     const iconMatch = device.icon && device.icon.includes(searchTerm);
@@ -1549,26 +1636,29 @@
             }
             
             // Sort devices
-            filtered.sort((a, b) => {
-                switch(currentSort) {
-                    case 'trackers':
-                        return b.trackers - a.trackers;
-                    case 'queries':
-                        return b.queries - a.queries;
-                    case 'name':
-                        return (a.name || '').localeCompare(b.name || '');
-                    default:
-                        return 0;
-                }
-            });
+            if (filtered.length > 0) {
+                filtered.sort((a, b) => {
+                    switch(currentSort) {
+                        case 'trackers':
+                            return b.trackers - a.trackers;
+                        case 'queries':
+                            return b.queries - a.queries;
+                        case 'name':
+                            return (a.name || '').localeCompare(b.name || '');
+                        default:
+                            return 0;
+                    }
+                });
+            }
             
             // Render filtered devices
             if (filtered.length === 0) {
-                container.innerHTML = '<div class="loading">No devices found' + (searchTerm ? ` matching "${searchInput.value}"` : '') + '</div>';
+                container.innerHTML = '<div class="loading">No devices found' + (searchTerm ? ` matching "${searchInput ? searchInput.value : ''}"` : '') + '</div>';
                 return;
             }
             
-            container.innerHTML = filtered.map(device => renderDeviceCard(device)).join('');
+            const html = filtered.map(device => renderDeviceCard(device)).join('');
+            container.innerHTML = html;
         }
         
         // Modal functionality
@@ -1587,7 +1677,7 @@
         
         async function showDeviceDetails(ip) {
             modal.style.display = 'block';
-            document.getElementById('modalContent').innerHTML = '<div class="loading">Loading device details...</div>';
+            document.getElementById('deviceModalContent').innerHTML = '<div class="loading">Loading device details...</div>';
             
             try {
                 const response = await fetch(`/api/device/${ip}/stats`);
@@ -1639,7 +1729,7 @@
                     </div>
                 `).join('');
                 
-                document.getElementById('modalContent').innerHTML = `
+                document.getElementById('deviceModalContent').innerHTML = `
                     <h2>
                         <span class="device-icon">${data.device.icon || '🖥️'}</span>
                         ${data.device.name}
@@ -1690,7 +1780,7 @@
                 `;
             } catch (error) {
                 console.error('Error loading device details:', error);
-                document.getElementById('modalContent').innerHTML = `
+                document.getElementById('deviceModalContent').innerHTML = `
                     <div class="error-message">Error loading device details: ${error.message}</div>
                 `;
             }
@@ -1726,7 +1816,7 @@
             }
             
             return `
-                <div class="domain-item ${isTracker ? 'tracker' : ''}" onclick="toggleDomainExpand(this)">
+                <div class="domain-item ${isTracker ? 'tracker' : ''}">
                     <div class="domain-item-header">
                         <div>
                             <span class="domain-expand-icon">▶</span>
@@ -1759,28 +1849,264 @@
                 const data = await response.json();
                 
                 // Update top trackers
-                const trackersHtml = data.top_trackers.map(tracker => renderDomainItem(tracker, true)).join('');
-                document.getElementById('topTrackersList').innerHTML = trackersHtml || '<p style="color: #666;">No tracker domains found</p>';
+                const trackersListEl = document.getElementById('topTrackersList');
+                if (trackersListEl) {
+                    const trackersHtml = data.top_trackers.map(tracker => renderDomainItem(tracker, true)).join('');
+                    trackersListEl.innerHTML = trackersHtml || '<p style="color: #666;">No tracker domains found</p>';
+                }
                 
                 // Update top domains
-                const domainsHtml = data.top_domains.map(domain => renderDomainItem(domain, false)).join('');
-                document.getElementById('topDomainsList').innerHTML = domainsHtml || '<p style="color: #666;">No domains found</p>';
+                const domainsListEl = document.getElementById('topDomainsList');
+                if (domainsListEl) {
+                    const domainsHtml = data.top_domains.map(domain => renderDomainItem(domain, false)).join('');
+                    domainsListEl.innerHTML = domainsHtml || '<p style="color: #666;">No domains found</p>';
+                }
             } catch (error) {
                 console.error('Error fetching top domains:', error);
-                document.getElementById('topTrackersList').innerHTML = '<div class="error-message">Error loading data</div>';
-                document.getElementById('topDomainsList').innerHTML = '<div class="error-message">Error loading data</div>';
+                const trackersListEl = document.getElementById('topTrackersList');
+                if (trackersListEl) {
+                    trackersListEl.innerHTML = '<div class="error-message">Error loading data</div>';
+                }
+                const domainsListEl = document.getElementById('topDomainsList');
+                if (domainsListEl) {
+                    domainsListEl.innerHTML = '<div class="error-message">Error loading data</div>';
+                }
             }
         }
         
-        // Initial load
-        fetchNetworkStats();
-        fetchRealtime();
-        fetchTopDomains();
+        // Country code to name and flag mapping
+        const countryInfo = {
+            'US': { name: 'United States', flag: '🇺🇸' },
+            'NL': { name: 'Netherlands', flag: '🇳🇱' },
+            'GB': { name: 'United Kingdom', flag: '🇬🇧' },
+            'DE': { name: 'Germany', flag: '🇩🇪' },
+            'FR': { name: 'France', flag: '🇫🇷' },
+            'CA': { name: 'Canada', flag: '🇨🇦' },
+            'AU': { name: 'Australia', flag: '🇦🇺' },
+            'JP': { name: 'Japan', flag: '🇯🇵' },
+            'CN': { name: 'China', flag: '🇨🇳' },
+            'IN': { name: 'India', flag: '🇮🇳' },
+            'BR': { name: 'Brazil', flag: '🇧🇷' },
+            'RU': { name: 'Russia', flag: '🇷🇺' },
+            'KR': { name: 'South Korea', flag: '🇰🇷' },
+            'IT': { name: 'Italy', flag: '🇮🇹' },
+            'ES': { name: 'Spain', flag: '🇪🇸' },
+            'MX': { name: 'Mexico', flag: '🇲🇽' },
+            'IE': { name: 'Ireland', flag: '🇮🇪' },
+            'SG': { name: 'Singapore', flag: '🇸🇬' },
+            'CH': { name: 'Switzerland', flag: '🇨🇭' },
+            'SE': { name: 'Sweden', flag: '🇸🇪' },
+            'NO': { name: 'Norway', flag: '🇳🇴' },
+            'DK': { name: 'Denmark', flag: '🇩🇰' },
+            'FI': { name: 'Finland', flag: '🇫🇮' },
+            'PL': { name: 'Poland', flag: '🇵🇱' },
+            'BE': { name: 'Belgium', flag: '🇧🇪' },
+            'AT': { name: 'Austria', flag: '🇦🇹' },
+            'NZ': { name: 'New Zealand', flag: '🇳🇿' },
+            'ZA': { name: 'South Africa', flag: '🇿🇦' },
+            'AR': { name: 'Argentina', flag: '🇦🇷' },
+            'CL': { name: 'Chile', flag: '🇨🇱' }
+        };
         
-        // Update every 5 seconds
-        setInterval(fetchNetworkStats, 5000);
-        setInterval(fetchRealtime, 2000);
-        setInterval(fetchTopDomains, 10000); // Update top domains every 10 seconds
+        function getCountryInfo(code) {
+            return countryInfo[code] || { name: code, flag: '🌍' };
+        }
+        
+        // Geolocation functions (must be defined before DOMContentLoaded)
+        async function fetchGeolocationStats() {
+            try {
+                const response = await fetch('/api/geolocation/stats');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                
+                const statsHtml = `
+                    <div class="stat-card">
+                        <div class="stat-label">Countries Tracked</div>
+                        <div class="stat-value">${data.countries.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Queries with Country Data</div>
+                        <div class="stat-value">${data.queries_with_country.toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Queries (24h)</div>
+                        <div class="stat-value">${data.total_queries.toLocaleString()}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Coverage</div>
+                        <div class="stat-value">${data.coverage_percent}%</div>
+                    </div>
+                `;
+                // Find container
+                let container = document.getElementById('geolocationStats');
+                if (!container) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    container = document.getElementById('geolocationStats');
+                }
+                
+                if (container) {
+                    container.innerHTML = statsHtml;
+                } else {
+                    console.error('Error: geolocationStats container not found');
+                }
+            } catch (error) {
+                console.error('Error fetching geolocation stats:', error);
+                const container = document.getElementById('geolocationStats');
+                if (container) {
+                    container.innerHTML = `<div class="error-message">Error loading stats: ${error.message}</div>`;
+                }
+            }
+        }
+        
+        async function fetchGeolocationCountries() {
+            try {
+                const response = await fetch('/api/geolocation/countries');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                
+                const countriesHtml = data.map(country => {
+                    const code = country.country_code || 'Unknown';
+                    const info = getCountryInfo(code);
+                    return `
+                    <div class="country-item">
+                        <div class="country-code">
+                            <span class="country-flag">${info.flag}</span>
+                            <div class="country-code-text">
+                                <div class="country-name">${info.name}</div>
+                                <div class="country-code-small">${code}</div>
+                            </div>
+                        </div>
+                        <div class="country-stats">
+                            <div class="country-queries">${country.queries.toLocaleString()} queries</div>
+                            <div class="country-trackers">${country.trackers.toLocaleString()} tracker queries</div>
+                            <div class="country-devices">${country.device_count || 0} devices</div>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+                
+                // Find container
+                let container = document.getElementById('geolocationCountries');
+                if (!container) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    container = document.getElementById('geolocationCountries');
+                }
+                
+                if (container) {
+                    const html = `<div class="country-list">${countriesHtml}</div>`;
+                    container.innerHTML = html;
+                } else {
+                    console.error('Error: geolocationCountries container not found');
+                }
+            } catch (error) {
+                console.error('Error fetching geolocation countries:', error);
+                const container = document.getElementById('geolocationCountries');
+                if (container) {
+                    container.innerHTML = `<div class="error-message">Error loading countries: ${error.message}</div>`;
+                }
+            }
+        }
+        
+        // Sidebar Navigation
+        document.addEventListener('DOMContentLoaded', () => {
+            const sections = document.querySelectorAll('.section');
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            function showSection(id) {
+                // Hide all sections
+                sections.forEach(section => {
+                    section.classList.remove('active');
+                    section.style.display = 'none';
+                });
+                
+                // Remove active class from all nav items
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Show selected section
+                const activeSection = document.getElementById(id + '-section');
+                if (activeSection) {
+                    activeSection.classList.add('active');
+                    activeSection.style.display = 'block';
+                    
+                    const navItem = document.querySelector(`.nav-item[data-section="${id}"]`);
+                    if (navItem) {
+                        navItem.classList.add('active');
+                    }
+                    
+                    // Fetch data for the section
+                    setTimeout(() => {
+                        if (id === 'geolocation') {
+                            fetchGeolocationStats().catch(err => console.error('Error in fetchGeolocationStats:', err));
+                            fetchGeolocationCountries().catch(err => console.error('Error in fetchGeolocationCountries:', err));
+                        } else if (id === 'devices') {
+                            setupDeviceSearchListeners();
+                            fetchNetworkStats().catch(err => console.error('Error in fetchNetworkStats:', err));
+                        } else if (id === 'activity') {
+                            fetchRealtime();
+                        } else if (id === 'dashboard') {
+                            fetchNetworkStats();
+                            fetchTopDomains();
+                        }
+                    }, 100);
+                }
+            }
+            
+            // Handle nav item clicks
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const sectionId = item.getAttribute('data-section');
+                    if (sectionId) {
+                        window.location.hash = sectionId;
+                        showSection(sectionId);
+                    }
+                });
+            });
+            
+            // Handle hash changes (browser back/forward)
+            function handleHashChange() {
+                const hash = window.location.hash.substring(1);
+                if (hash && ['dashboard', 'devices', 'geolocation', 'activity'].includes(hash)) {
+                    showSection(hash);
+                } else {
+                    showSection('dashboard');
+                }
+            }
+            
+            window.addEventListener('hashchange', handleHashChange);
+            
+            // Set up device search listeners on initial load
+            setupDeviceSearchListeners();
+            
+            // Event delegation for domain item clicks (expand/collapse)
+            document.addEventListener('click', (e) => {
+                const domainItem = e.target.closest('.domain-item');
+                if (domainItem && !e.target.closest('.domain-device-name')) {
+                    // Don't expand if clicking on device name (that opens device modal)
+                    toggleDomainExpand(domainItem);
+                }
+            });
+            
+            // Handle initial load - check hash first, then load default
+            const initialHash = window.location.hash.substring(1);
+            if (initialHash && ['dashboard', 'devices', 'geolocation', 'activity'].includes(initialHash)) {
+                setTimeout(() => showSection(initialHash), 100);
+            } else {
+                showSection('dashboard');
+                fetchNetworkStats();
+                fetchTopDomains();
+            }
+            
+            // Always start fetching realtime (it updates itself)
+            fetchRealtime();
+            
+            // Update every 5 seconds
+            setInterval(fetchNetworkStats, 5000);
+            setInterval(fetchRealtime, 2000);
+            setInterval(fetchTopDomains, 10000); // Update top domains every 10 seconds
+        });
     </script>
 </body>
 </html>

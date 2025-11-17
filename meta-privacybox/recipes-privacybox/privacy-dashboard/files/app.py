@@ -137,7 +137,12 @@ def get_privacy_score_color(score):
 @app.route('/')
 def index():
     """Main dashboard page"""
-    return render_template('index.html')
+    response = app.make_response(render_template('index.html'))
+    # Disable caching
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/api/devices')
 def get_devices():
