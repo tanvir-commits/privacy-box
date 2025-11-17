@@ -1,0 +1,15 @@
+[Unit]
+Description=Install maxminddb Python Library
+After=network.target
+Before=device-tracker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/install-maxminddb
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
