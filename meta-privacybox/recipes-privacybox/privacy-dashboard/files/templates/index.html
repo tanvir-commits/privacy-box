@@ -716,16 +716,30 @@
                 // Format top domains
                 const topDomainsHtml = data.top_domains.map(domain => `
                     <div class="domain-item">
-                        <span>${domain.domain}</span>
-                        <span class="domain-count">${domain.count}</span>
+                        <div class="domain-item-header">
+                            <div>
+                                <span>${domain.domain}</span>
+                            </div>
+                            <div>
+                                <span class="domain-count">${domain.count.toLocaleString()}</span>
+                                <span class="domain-count-label">queries</span>
+                            </div>
+                        </div>
                     </div>
                 `).join('');
                 
                 // Format top trackers
                 const topTrackersHtml = data.top_trackers.map(tracker => `
                     <div class="domain-item tracker">
-                        <span>${tracker.domain}</span>
-                        <span class="domain-count">${tracker.count}</span>
+                        <div class="domain-item-header">
+                            <div>
+                                <span>${tracker.domain}</span>
+                            </div>
+                            <div>
+                                <span class="domain-count">${tracker.count.toLocaleString()}</span>
+                                <span class="domain-count-label">queries</span>
+                            </div>
+                        </div>
                     </div>
                 `).join('');
                 
@@ -842,12 +856,12 @@
             return `
                 <div class="domain-item ${isTracker ? 'tracker' : ''}" onclick="toggleDomainExpand(this)">
                     <div class="domain-item-header">
-                        <div style="display: flex; align-items: center; flex: 1; min-width: 0;">
+                        <div>
                             <span class="domain-expand-icon">▶</span>
                             <span title="${domain.domain}">${domainDisplay}</span>
                             ${deviceCount > 0 ? `<span class="domain-device-badge">${deviceCount} ${deviceCount === 1 ? 'device' : 'devices'}</span>` : ''}
                         </div>
-                        <div style="display: flex; align-items: baseline; gap: 4px;">
+                        <div>
                             <span class="domain-count">${domain.count.toLocaleString()}</span>
                             <span class="domain-count-label">queries</span>
                         </div>
