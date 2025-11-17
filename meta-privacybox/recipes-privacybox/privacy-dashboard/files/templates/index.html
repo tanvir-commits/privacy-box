@@ -172,13 +172,13 @@
         .device-card {
             border: 1px solid var(--color-border);
             border-radius: var(--radius-md);
-            padding: var(--spacing-sm) var(--spacing-md);
-            margin-bottom: var(--spacing-xs);
+            padding: 10px var(--spacing-md);
+            margin-bottom: 6px;
             transition: all 0.3s ease;
             background: var(--color-bg);
-            display: flex;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
             align-items: center;
-            justify-content: space-between;
             gap: var(--spacing-md);
         }
         
@@ -190,54 +190,102 @@
         
         .device-header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0;
-            flex: 1;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
         }
         
         .device-name {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             color: var(--color-text);
             display: flex;
             align-items: center;
-            gap: var(--spacing-xs);
-            margin-bottom: 2px;
+            gap: 6px;
+            white-space: nowrap;
         }
         
         .device-icon {
-            font-size: 18px;
+            font-size: 16px;
             display: inline-block;
+            flex-shrink: 0;
         }
         
         .device-ip {
             color: var(--color-text-tertiary);
-            font-size: 12px;
+            font-size: 11px;
+            white-space: nowrap;
         }
         
         .device-stats {
             display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            min-width: 0;
         }
         
         .device-queries {
             color: var(--color-text-secondary);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .device-tracker-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tracker-percentage {
+            font-size: 11px;
+            color: var(--color-text-tertiary);
+            font-weight: 500;
+        }
+        
+        .tracker-bar {
+            width: 60px;
+            height: 4px;
+            background: var(--color-bg-tertiary);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .tracker-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-tracker) 0%, #ff6b6b 100%);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .activity-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--color-success);
+            flex-shrink: 0;
+            box-shadow: 0 0 4px rgba(76, 175, 80, 0.5);
+        }
+        
+        .activity-indicator.inactive {
+            background: var(--color-text-tertiary);
+            box-shadow: none;
         }
         
         .tracker-badge {
             display: inline-block;
             background: linear-gradient(135deg, var(--color-tracker) 0%, #ff6b6b 100%);
             color: white;
-            padding: 4px var(--spacing-sm);
+            padding: 3px 8px;
             border-radius: var(--radius-full);
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             box-shadow: var(--shadow-sm);
             white-space: nowrap;
+            min-width: 20px;
+            text-align: center;
         }
         
         .tracker-list {
@@ -620,21 +668,278 @@
         }
         
         @media (max-width: 768px) {
+            /* Body and container */
+            body {
+                padding: var(--spacing-sm);
+            }
+            
+            .container {
+                max-width: 100%;
+            }
+            
+            /* Header */
+            header {
+                padding: var(--spacing-md);
+                margin-bottom: var(--spacing-md);
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .subtitle {
+                font-size: 14px;
+            }
+            
+            /* Stats grid */
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-sm);
+                margin-bottom: var(--spacing-md);
+            }
+            
+            .stat-card {
+                padding: var(--spacing-md);
+            }
+            
+            .stat-value {
+                font-size: 32px;
+            }
+            
+            .stat-label {
+                font-size: 12px;
+            }
+            
+            /* Devices section */
+            .devices-section {
+                padding: var(--spacing-md);
+                margin-bottom: var(--spacing-md);
+            }
+            
             .devices-section > div:first-child {
                 flex-direction: column;
                 align-items: stretch !important;
+                gap: var(--spacing-sm);
+                margin-bottom: var(--spacing-md) !important;
             }
             
             .devices-section > div:first-child > div {
                 width: 100%;
             }
             
+            .devices-section h2 {
+                font-size: 1.3em;
+                margin-bottom: var(--spacing-sm);
+            }
+            
             #deviceSearch {
                 max-width: 100% !important;
+                width: 100%;
+                margin: 0 !important;
+            }
+            
+            .select-control {
+                width: 100%;
+                margin-bottom: var(--spacing-sm);
+            }
+            
+            /* Device cards */
+            .device-card {
+                padding: var(--spacing-sm) var(--spacing-md);
+                margin-bottom: var(--spacing-xs);
+            }
+            
+            .device-name {
+                font-size: 14px;
+            }
+            
+            .device-icon {
+                font-size: 16px;
+            }
+            
+            .device-ip {
+                font-size: 11px;
+            }
+            
+            .device-queries {
+                font-size: 11px;
+            }
+            
+            .tracker-badge {
+                font-size: 10px;
+                padding: 3px 6px;
+            }
+            
+            /* Top domains grid */
+            .top-domains-grid {
+                grid-template-columns: 1fr !important;
+                gap: var(--spacing-md) !important;
             }
             
             .devices-section > div:last-child {
                 grid-template-columns: 1fr !important;
+                gap: var(--spacing-md) !important;
+            }
+            
+            /* Top domains section */
+            .devices-section h3 {
+                font-size: 1.1em;
+                margin-bottom: var(--spacing-sm);
+                padding-bottom: var(--spacing-xs);
+            }
+            
+            /* Domain items */
+            .domain-item {
+                padding: var(--spacing-xs) var(--spacing-sm);
+            }
+            
+            .domain-item-header {
+                flex-wrap: wrap;
+                gap: var(--spacing-xs);
+            }
+            
+            .domain-item-header > div:first-child {
+                min-width: 0;
+                flex: 1 1 auto;
+            }
+            
+            .domain-item-header > div:last-child {
+                flex-shrink: 0;
+            }
+            
+            .domain-count {
+                font-size: 13px;
+            }
+            
+            .domain-count-label {
+                font-size: 10px;
+            }
+            
+            .domain-device-badge {
+                font-size: 10px;
+                padding: 2px 4px;
+            }
+            
+            /* Domain devices */
+            .domain-device-item {
+                padding: var(--spacing-xs);
+                font-size: 12px;
+            }
+            
+            .domain-device-name {
+                font-size: 12px;
+                gap: var(--spacing-xs);
+            }
+            
+            .domain-device-count {
+                font-size: 11px;
+            }
+            
+            /* Modal */
+            .modal-content {
+                width: 95%;
+                max-width: 95%;
+                padding: var(--spacing-md);
+                margin: 10% auto;
+            }
+            
+            .modal-section {
+                margin-bottom: var(--spacing-md);
+            }
+            
+            .modal-section h3 {
+                font-size: 1.1em;
+                margin-bottom: var(--spacing-sm);
+                padding-bottom: var(--spacing-xs);
+            }
+            
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--spacing-sm);
+            }
+            
+            .stat-mini {
+                padding: var(--spacing-sm);
+            }
+            
+            .stat-mini-value {
+                font-size: 20px;
+            }
+            
+            .stat-mini-label {
+                font-size: 11px;
+            }
+            
+            /* Realtime section */
+            .realtime-section {
+                padding: var(--spacing-md);
+            }
+            
+            .realtime-section h2 {
+                font-size: 1.3em;
+                margin-bottom: var(--spacing-md);
+            }
+            
+            .realtime-item {
+                padding: var(--spacing-xs) var(--spacing-sm);
+                font-size: 12px;
+            }
+            
+            /* Refresh indicator */
+            .refresh-indicator {
+                top: var(--spacing-xs);
+                right: var(--spacing-xs);
+                padding: var(--spacing-xs) var(--spacing-sm);
+                font-size: 11px;
+            }
+            
+            /* Touch targets */
+            .device-card,
+            .domain-item,
+            .domain-device-name {
+                min-height: 44px;
+            }
+            
+            .close {
+                font-size: 32px;
+                padding: var(--spacing-xs);
+                min-width: 44px;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            /* Extra small screens */
+            body {
+                padding: var(--spacing-xs);
+            }
+            
+            header {
+                padding: var(--spacing-sm);
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .stat-value {
+                font-size: 28px;
+            }
+            
+            .devices-section,
+            .realtime-section {
+                padding: var(--spacing-sm);
+            }
+            
+            .device-card {
+                padding: var(--spacing-xs) var(--spacing-sm);
+            }
+            
+            .stats-row {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -685,7 +990,7 @@
         
         <div class="devices-section">
             <h2 style="margin-bottom: 20px;">Network-Wide Top Domains</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="top-domains-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div>
                     <h3 style="color: #667eea; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">Top Tracker Domains (24h)</h3>
                     <div id="topTrackersList" class="loading">Loading...</div>
@@ -747,23 +1052,34 @@
                 return;
             }
             
-            container.innerHTML = devices.map(device => `
+            container.innerHTML = devices.map(device => {
+                const trackerPct = device.queries > 0 ? Math.round((device.trackers / device.queries) * 100) : 0;
+                const isActive = device.queries > 0;
+                const queriesShort = device.queries >= 1000 ? (device.queries / 1000).toFixed(1) + 'k' : device.queries.toLocaleString();
+                
+                return `
                 <div class="device-card clickable" onclick="showDeviceDetails('${device.ip}')">
+                    <div class="activity-indicator ${isActive ? '' : 'inactive'}"></div>
                     <div class="device-header">
-                        <div>
-                            <div class="device-name">
-                                <span class="device-icon">${device.icon || '🖥️'}</span>
-                                ${device.name}
-                            </div>
-                            <div class="device-ip">${device.ip}</div>
+                        <div class="device-name">
+                            <span class="device-icon">${device.icon || '🖥️'}</span>
+                            ${device.name}
                         </div>
+                        <div class="device-ip">${device.ip}</div>
                     </div>
                     <div class="device-stats">
-                        <span class="device-queries">${device.queries.toLocaleString()} queries</span>
-                        <span class="tracker-badge">${device.trackers} trackers</span>
+                        <div class="device-tracker-info">
+                            <span class="tracker-percentage">${trackerPct}%</span>
+                            <div class="tracker-bar">
+                                <div class="tracker-bar-fill" style="width: ${trackerPct}%"></div>
+                            </div>
+                            <span class="tracker-badge">${device.trackers}</span>
+                        </div>
+                        <span class="device-queries">${queriesShort} queries</span>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
         
         async function fetchRealtime() {
