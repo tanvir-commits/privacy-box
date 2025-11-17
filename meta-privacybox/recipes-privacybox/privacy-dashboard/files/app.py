@@ -146,15 +146,17 @@ def get_active_status(last_query_time):
         return "offline"
 
 def calculate_query_rate(cursor, device_ip):
-    """Calculate queries per hour from last hour of activity"""
-    hour_ago = int((datetime.now() - timedelta(hours=1)).timestamp())
+    """Calculate queries per hour from last 24 hours of activity"""
+    # Use last 24 hours to calculate average queries per hour
+    day_ago = int((datetime.now() - timedelta(hours=24)).timestamp())
     cursor.execute("""
         SELECT COUNT(*) 
         FROM dns_queries 
         WHERE device_ip = ? AND timestamp > ?
-    """, (device_ip, hour_ago))
+    """, (device_ip, day_ago))
     count = cursor.fetchone()[0]
-    return count
+    # Return queries per hour (count / 24)
+    return round(count / 24) if count > 0 else 0
 
 @app.route('/')
 def index():
@@ -190,8 +192,12 @@ def get_devices():
         last_query_time = last_query_row[0] if last_query_row and last_query_row[0] else None
         
         # If no queries, use last_seen from devices table as fallback
-        if not last_query_time and row[2]:
-            last_query_time = row[2]
+        if not last_query_time:
+            # Get last_seen from devices table for this IP
+            cursor.execute("SELECT MAX(last_seen) FROM devices WHERE ip = ?", (device_ip,))
+            last_seen_row = cursor.fetchone()
+            if last_seen_row and last_seen_row[0]:
+                last_query_time = last_seen_row[0]
         
         # Calculate active status
         active_status = get_active_status(last_query_time)
