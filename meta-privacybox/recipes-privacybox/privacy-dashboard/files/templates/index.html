@@ -238,6 +238,12 @@
             gap: 8px;
         }
         
+        .tracker-percentage {
+            font-size: 11px;
+            color: var(--color-text-tertiary);
+            font-weight: 500;
+        }
+        
         .tracker-bar {
             width: 60px;
             height: 4px;
@@ -1063,6 +1069,7 @@
                     </div>
                     <div class="device-stats">
                         <div class="device-tracker-info">
+                            <span class="tracker-percentage">${trackerPct}%</span>
                             <div class="tracker-bar">
                                 <div class="tracker-bar-fill" style="width: ${trackerPct}%"></div>
                             </div>
