@@ -292,29 +292,80 @@
         
         .domain-expand-icon {
             margin-right: 8px;
-            font-size: 12px;
-            color: #666;
+            font-size: 10px;
+            color: #999;
             transition: transform 0.2s;
+            display: inline-block;
+            width: 12px;
         }
         
         .domain-item.expanded .domain-expand-icon {
             transform: rotate(90deg);
         }
         
+        .domain-item-header > div:first-child {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .domain-item-header > div:first-child > span:last-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
         .domain-count {
             font-weight: bold;
             color: #667eea;
+            font-size: 14px;
+        }
+        
+        .domain-count-label {
+            font-size: 11px;
+            color: #999;
+            font-weight: normal;
+            margin-left: 4px;
+        }
+        
+        .domain-device-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 8px;
+            font-weight: normal;
         }
         
         .domain-devices {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e0e0e0;
             display: none;
+            animation: slideDown 0.2s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .domain-item.expanded .domain-devices {
             display: block;
+        }
+        
+        .domain-devices-header {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 500;
         }
         
         .domain-device-item {
@@ -747,27 +798,46 @@
         
         function renderDomainItem(domain, isTracker = false) {
             const deviceCount = domain.devices ? domain.devices.length : 0;
-            const devicesHtml = domain.devices && domain.devices.length > 0 ? domain.devices.map(device => `
+            const devicesHtml = domain.devices && domain.devices.length > 0 ? domain.devices.map(device => {
+                // Clean up device name (remove extra spaces, format better)
+                let deviceName = device.name || 'Unknown';
+                deviceName = deviceName.replace(/\s+/g, ' ').trim();
+                if (deviceName.startsWith('Device- ')) {
+                    deviceName = deviceName.replace('Device- ', 'Device-');
+                }
+                
+                return `
                 <div class="domain-device-item">
                     <span class="domain-device-name" onclick="event.stopPropagation(); showDeviceDetails('${device.ip}')">
                         <span>${device.icon || '🖥️'}</span>
-                        ${device.name}
+                        ${deviceName}
                     </span>
-                    <span class="domain-device-count">${device.count} ${device.count === 1 ? 'query' : 'queries'}</span>
+                    <span class="domain-device-count">${device.count.toLocaleString()} ${device.count === 1 ? 'query' : 'queries'}</span>
                 </div>
-            `).join('') : '<p style="color: #666; padding: 8px; font-size: 12px;">No device data available</p>';
+            `;
+            }).join('') : '<p style="color: #666; padding: 8px; font-size: 12px;">No device data available</p>';
+            
+            // Truncate long domain names
+            let domainDisplay = domain.domain;
+            if (domainDisplay.length > 50) {
+                domainDisplay = domainDisplay.substring(0, 47) + '...';
+            }
             
             return `
                 <div class="domain-item ${isTracker ? 'tracker' : ''}" onclick="toggleDomainExpand(this)">
                     <div class="domain-item-header">
-                        <div style="display: flex; align-items: center;">
+                        <div style="display: flex; align-items: center; flex: 1; min-width: 0;">
                             <span class="domain-expand-icon">▶</span>
-                            <span>${domain.domain}</span>
+                            <span title="${domain.domain}">${domainDisplay}</span>
+                            ${deviceCount > 0 ? `<span class="domain-device-badge">${deviceCount} ${deviceCount === 1 ? 'device' : 'devices'}</span>` : ''}
                         </div>
-                        <span class="domain-count">${domain.count.toLocaleString()}</span>
+                        <div style="display: flex; align-items: baseline; gap: 4px;">
+                            <span class="domain-count">${domain.count.toLocaleString()}</span>
+                            <span class="domain-count-label">queries</span>
+                        </div>
                     </div>
                     <div class="domain-devices">
-                        ${deviceCount > 0 ? `<div style="font-size: 12px; color: #666; margin-bottom: 8px;">Queried by ${deviceCount} ${deviceCount === 1 ? 'device' : 'devices'}:</div>` : ''}
+                        ${deviceCount > 0 ? `<div class="domain-devices-header">Queried by ${deviceCount} ${deviceCount === 1 ? 'device' : 'devices'}:</div>` : ''}
                         ${devicesHtml}
                     </div>
                 </div>
