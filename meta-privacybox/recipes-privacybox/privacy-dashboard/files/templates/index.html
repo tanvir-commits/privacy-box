@@ -190,6 +190,20 @@
         
         .device-header {
             display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+        
+        .device-icon {
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .device-info {
+            display: flex;
             flex-direction: column;
             gap: 2px;
             min-width: 0;
@@ -199,16 +213,7 @@
             font-size: 15px;
             font-weight: 600;
             color: var(--color-text);
-            display: flex;
-            align-items: center;
-            gap: 6px;
             white-space: nowrap;
-        }
-        
-        .device-icon {
-            font-size: 16px;
-            display: inline-block;
-            flex-shrink: 0;
         }
         
         .device-ip {
@@ -1061,11 +1066,11 @@
                 <div class="device-card clickable" onclick="showDeviceDetails('${device.ip}')">
                     <div class="activity-indicator ${isActive ? '' : 'inactive'}"></div>
                     <div class="device-header">
-                        <div class="device-name">
-                            <span class="device-icon">${device.icon || '🖥️'}</span>
-                            ${device.name}
+                        <span class="device-icon">${device.icon || '🖥️'}</span>
+                        <div class="device-info">
+                            <div class="device-name">${device.name}</div>
+                            <div class="device-ip">${device.ip}</div>
                         </div>
-                        <div class="device-ip">${device.ip}</div>
                     </div>
                     <div class="device-stats">
                         <div class="device-tracker-info">
