@@ -261,7 +261,7 @@
         
         .domain-item {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             padding: 10px;
             background: #f5f5f5;
             margin-bottom: 5px;
@@ -288,6 +288,7 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
+            flex-shrink: 0;
         }
         
         .domain-expand-icon {
@@ -306,12 +307,25 @@
         .domain-item-header > div:first-child {
             flex: 1;
             min-width: 0;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
         }
         
-        .domain-item-header > div:first-child > span:last-child {
+        .domain-item-header > div:first-child > span:nth-child(2) {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .domain-item-header > div:last-child {
+            flex-shrink: 0;
+            margin-left: 12px;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
         }
         
         .domain-count {
@@ -344,6 +358,8 @@
             border-top: 1px solid #e0e0e0;
             display: none;
             animation: slideDown 0.2s ease-out;
+            width: 100%;
+            flex-shrink: 0;
         }
         
         @keyframes slideDown {
