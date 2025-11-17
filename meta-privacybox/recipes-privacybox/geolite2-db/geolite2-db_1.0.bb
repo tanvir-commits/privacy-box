@@ -13,9 +13,9 @@ SRC_URI = " \
     ${DB_URL};name=db;downloadfilename=${DB_FILENAME} \
 "
 
-# Skip checksum verification - database updates frequently
-SRC_URI[db.sha256sum] = "skip"
-SRC_URI[db.md5sum] = "skip"
+# Checksums for GeoLite2-Country.mmdb (from GitHub mirror)
+SRC_URI[db.sha256sum] = "e3094a17b47095afb63584d01a471f2151c8f4203ecd1a9b5d4cae917a834249"
+SRC_URI[db.md5sum] = "06e260d9c1a7bb262a9dc70ed1c13aa2"
 
 S = "${WORKDIR}"
 
