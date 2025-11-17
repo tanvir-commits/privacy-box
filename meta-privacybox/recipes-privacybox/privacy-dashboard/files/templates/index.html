@@ -172,13 +172,13 @@
         .device-card {
             border: 1px solid var(--color-border);
             border-radius: var(--radius-md);
-            padding: 10px var(--spacing-md);
-            margin-bottom: 6px;
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin-bottom: var(--spacing-xs);
             transition: all 0.3s ease;
             background: var(--color-bg);
-            display: grid;
-            grid-template-columns: auto 1fr auto;
+            display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: var(--spacing-md);
         }
         
@@ -190,102 +190,54 @@
         
         .device-header {
             display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 0;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0;
+            flex: 1;
         }
         
         .device-name {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 600;
             color: var(--color-text);
             display: flex;
             align-items: center;
-            gap: 6px;
-            white-space: nowrap;
+            gap: var(--spacing-xs);
+            margin-bottom: 2px;
         }
         
         .device-icon {
-            font-size: 16px;
+            font-size: 18px;
             display: inline-block;
-            flex-shrink: 0;
         }
         
         .device-ip {
             color: var(--color-text-tertiary);
-            font-size: 11px;
-            white-space: nowrap;
+            font-size: 12px;
         }
         
         .device-stats {
             display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
-            min-width: 0;
+            align-items: center;
+            gap: var(--spacing-md);
         }
         
         .device-queries {
             color: var(--color-text-secondary);
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 500;
-            white-space: nowrap;
-        }
-        
-        .device-tracker-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .tracker-percentage {
-            font-size: 11px;
-            color: var(--color-text-tertiary);
-            font-weight: 500;
-        }
-        
-        .tracker-bar {
-            width: 60px;
-            height: 4px;
-            background: var(--color-bg-tertiary);
-            border-radius: 2px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .tracker-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--color-tracker) 0%, #ff6b6b 100%);
-            border-radius: 2px;
-            transition: width 0.3s ease;
-        }
-        
-        .activity-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--color-success);
-            flex-shrink: 0;
-            box-shadow: 0 0 4px rgba(76, 175, 80, 0.5);
-        }
-        
-        .activity-indicator.inactive {
-            background: var(--color-text-tertiary);
-            box-shadow: none;
         }
         
         .tracker-badge {
             display: inline-block;
             background: linear-gradient(135deg, var(--color-tracker) 0%, #ff6b6b 100%);
             color: white;
-            padding: 3px 8px;
+            padding: 4px var(--spacing-sm);
             border-radius: var(--radius-full);
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
             box-shadow: var(--shadow-sm);
             white-space: nowrap;
-            min-width: 20px;
-            text-align: center;
         }
         
         .tracker-list {
@@ -795,34 +747,23 @@
                 return;
             }
             
-            container.innerHTML = devices.map(device => {
-                const trackerPct = device.queries > 0 ? Math.round((device.trackers / device.queries) * 100) : 0;
-                const isActive = device.queries > 0;
-                const queriesShort = device.queries >= 1000 ? (device.queries / 1000).toFixed(1) + 'k' : device.queries.toLocaleString();
-                
-                return `
+            container.innerHTML = devices.map(device => `
                 <div class="device-card clickable" onclick="showDeviceDetails('${device.ip}')">
-                    <div class="activity-indicator ${isActive ? '' : 'inactive'}"></div>
                     <div class="device-header">
-                        <div class="device-name">
-                            <span class="device-icon">${device.icon || '🖥️'}</span>
-                            ${device.name}
+                        <div>
+                            <div class="device-name">
+                                <span class="device-icon">${device.icon || '🖥️'}</span>
+                                ${device.name}
+                            </div>
+                            <div class="device-ip">${device.ip}</div>
                         </div>
-                        <div class="device-ip">${device.ip}</div>
                     </div>
                     <div class="device-stats">
-                        <div class="device-tracker-info">
-                            <span class="tracker-percentage">${trackerPct}%</span>
-                            <div class="tracker-bar">
-                                <div class="tracker-bar-fill" style="width: ${trackerPct}%"></div>
-                            </div>
-                            <span class="tracker-badge">${device.trackers}</span>
-                        </div>
-                        <span class="device-queries">${queriesShort} queries</span>
+                        <span class="device-queries">${device.queries.toLocaleString()} queries</span>
+                        <span class="tracker-badge">${device.trackers} trackers</span>
                     </div>
                 </div>
-            `;
-            }).join('');
+            `).join('');
         }
         
         async function fetchRealtime() {
