@@ -11,18 +11,18 @@ import sys
 import time
 from pathlib import Path
 
-# Try to import IP2Location
+# Try to import maxminddb (for GeoLite2)
 try:
-    import IP2Location
-    IP2LOCATION_AVAILABLE = True
+    import maxminddb
+    MAXMIND_AVAILABLE = True
 except ImportError:
-    IP2LOCATION_AVAILABLE = False
-    print("Warning: IP2Location library not available. Geolocation disabled.")
+    MAXMIND_AVAILABLE = False
+    print("Warning: maxminddb library not available. Geolocation disabled.")
 
 # Database paths
 DB_PATH = "/var/lib/device-tracker/device_tracker.db"
-IP2LOCATION_DB = "/usr/share/device-tracker/IP2LOCATION-LITE-DB3.BIN"
-FALLBACK_IP2LOCATION_DB = "/etc/device-tracker/IP2LOCATION-LITE-DB3.BIN"
+GEOLITE2_DB = "/usr/share/device-tracker/GeoLite2-Country.mmdb"
+FALLBACK_GEOLITE2_DB = "/etc/device-tracker/GeoLite2-Country.mmdb"
 
 # Cache for domain -> IP -> Country lookups
 _domain_ip_cache = {}
@@ -30,10 +30,10 @@ _ip_country_cache = {}
 _geo_db = None
 
 def get_geo_db():
-    """Get IP2Location database instance (singleton)"""
+    """Get GeoLite2 database reader instance (singleton)"""
     global _geo_db
     
-    if not IP2LOCATION_AVAILABLE:
+    if not MAXMIND_AVAILABLE:
         return None
     
     if _geo_db is not None:
@@ -41,21 +41,21 @@ def get_geo_db():
     
     # Try to find database file
     db_path = None
-    for path in [IP2LOCATION_DB, FALLBACK_IP2LOCATION_DB]:
+    for path in [GEOLITE2_DB, FALLBACK_GEOLITE2_DB]:
         if os.path.exists(path):
             db_path = path
             break
     
     if not db_path:
-        print(f"Warning: IP2Location database not found. Tried: {IP2LOCATION_DB}, {FALLBACK_IP2LOCATION_DB}")
+        print(f"Warning: GeoLite2 database not found. Tried: {GEOLITE2_DB}, {FALLBACK_GEOLITE2_DB}")
         return None
     
     try:
-        _geo_db = IP2Location.IP2Location(db_path)
-        print(f"Loaded IP2Location database from {db_path}")
+        _geo_db = maxminddb.open_database(db_path)
+        print(f"Loaded GeoLite2 database from {db_path}")
         return _geo_db
     except Exception as e:
-        print(f"Error loading IP2Location database: {e}")
+        print(f"Error loading GeoLite2 database: {e}")
         return None
 
 def resolve_domain_to_ip(domain):
@@ -95,8 +95,11 @@ def lookup_country_from_ip(ip):
         return None
     
     try:
-        record = geo_db.get_all(ip)
-        country_code = record.country_short if record and record.country_short else None
+        record = geo_db.get(ip)
+        # GeoLite2-Country format: record['country']['iso_code']
+        country_code = None
+        if record and 'country' in record and 'iso_code' in record['country']:
+            country_code = record['country']['iso_code']
         _ip_country_cache[ip] = country_code
         return country_code
     except Exception as e:
@@ -117,6 +120,9 @@ def get_country_for_domain(domain):
 
 def get_country_from_cache(domain, db_cursor):
     """Get country code from database cache, or resolve if not cached"""
+    if not MAXMIND_AVAILABLE:
+        return None
+    
     # First check database cache
     db_cursor.execute("""
         SELECT country_code 

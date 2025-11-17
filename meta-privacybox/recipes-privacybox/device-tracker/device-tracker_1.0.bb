@@ -21,8 +21,8 @@ RDEPENDS:${PN} = " \
     python3-sqlite3 \
     python3-flask \
     python3-flask-cors \
-    python3-ip2location \
-    ip2location-db \
+    python3-maxminddb \
+    geolite2-db \
     dnsmasq \
 "
 
