@@ -1179,9 +1179,12 @@
         }
         
         function formatTimeAgo(timestamp) {
-            if (!timestamp) return "Never";
+            if (!timestamp || timestamp === null || timestamp === 0) return "Never";
+            // Handle both Unix timestamp (seconds) and milliseconds
+            const ts = timestamp > 10000000000 ? Math.floor(timestamp / 1000) : timestamp;
             const now = Math.floor(Date.now() / 1000);
-            const diff = now - timestamp;
+            const diff = now - ts;
+            if (diff < 0) return "Just now"; // Future timestamp
             const seconds = diff;
             if (seconds < 60) return `${seconds} sec ago`;
             const minutes = Math.floor(seconds / 60);
@@ -1206,11 +1209,11 @@
             const trackerPct = device.queries > 0 ? Math.round((device.trackers / device.queries) * 100) : 0;
             const isActive = device.queries > 0;
             const queriesShort = device.queries >= 1000 ? (device.queries / 1000).toFixed(1) + 'k' : device.queries.toLocaleString();
-            const lastActive = device.last_query_time ? formatTimeAgo(device.last_query_time) : "Never";
+            const lastActive = (device.last_query_time && device.last_query_time > 0) ? formatTimeAgo(device.last_query_time) : "Never";
             const activeStatus = device.active_status || 'offline';
             const statusText = getStatusText(activeStatus);
             const queryRate = device.query_rate || 0;
-            const queryRateText = queryRate > 0 ? `${queryRate}/hr` : '0/hr';
+            const queryRateText = queryRate > 0 ? `${queryRate.toLocaleString()}/hr` : '0/hr';
             
             return `
                 <div class="device-card clickable" onclick="showDeviceDetails('${device.ip}')">
