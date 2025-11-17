@@ -34,6 +34,13 @@ except ImportError as e:
     OUI_AVAILABLE = False
     print(f"Warning: oui_lookup module not available ({e}), using fallback vendor detection")
 
+try:
+    from geolocation import get_country_from_cache, init_geolocation_cache_table
+    GEOLOCATION_AVAILABLE = True
+except ImportError as e:
+    GEOLOCATION_AVAILABLE = False
+    print(f"Warning: geolocation module not available ({e}), geolocation disabled")
+
 DNSMASQ_LOG = "/var/log/pihole/pihole.log"
 DHCP_LEASES = "/var/lib/misc/dnsmasq.leases"  # dnsmasq default lease file
 DB_PATH = "/var/lib/device-tracker/device_tracker.db"
@@ -61,9 +68,20 @@ class DeviceTracker:
                 device_name TEXT,
                 domain TEXT,
                 is_tracker INTEGER DEFAULT 0,
-                blocked INTEGER DEFAULT 0
+                blocked INTEGER DEFAULT 0,
+                country_code TEXT
             )
         """)
+        
+        # Add country_code column if it doesn't exist (migration)
+        try:
+            cursor.execute("ALTER TABLE dns_queries ADD COLUMN country_code TEXT")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        # Initialize geolocation cache table
+        if GEOLOCATION_AVAILABLE:
+            init_geolocation_cache_table(cursor)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS devices (
                 ip TEXT PRIMARY KEY,
@@ -85,6 +103,10 @@ class DeviceTracker:
         cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_timestamp "
             "ON dns_queries(timestamp)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_country_code "
+            "ON dns_queries(country_code)"
         )
         self.db.commit()
         
@@ -504,10 +526,18 @@ class DeviceTracker:
                         
                         # Store in database
                         cursor = self.db.cursor()
+                        # Get country code for domain (with caching)
+                        country_code = None
+                        if GEOLOCATION_AVAILABLE:
+                            try:
+                                country_code = get_country_from_cache(domain, cursor)
+                            except Exception as e:
+                                print(f"Error getting country for domain {domain}: {e}")
+                        
                         cursor.execute("""
                             INSERT INTO dns_queries 
-                            (timestamp, device_ip, device_mac, device_name, domain, is_tracker, blocked)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                            (timestamp, device_ip, device_mac, device_name, domain, is_tracker, blocked, country_code)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                         """, (
                             int(time.time()),
                             client_ip,
@@ -515,7 +545,8 @@ class DeviceTracker:
                             device_info['name'],
                             domain,
                             1 if is_tracker else 0,
-                            1 if blocked else 0
+                            1 if blocked else 0,
+                            country_code
                         ))
                         
                         # Update device info - but only if we have a better name

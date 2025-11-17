@@ -9,6 +9,7 @@ SRC_URI = " \
     file://requirements.txt \
     file://oui_lookup.py \
     file://oui-database.txt \
+    file://geolocation.py \
 "
 
 S = "${WORKDIR}"
@@ -20,6 +21,8 @@ RDEPENDS:${PN} = " \
     python3-sqlite3 \
     python3-flask \
     python3-flask-cors \
+    python3-ip2location \
+    ip2location-db \
     dnsmasq \
 "
 
@@ -36,6 +39,7 @@ do_install() {
     # Install Python scripts
     install -m 0755 ${WORKDIR}/device-tracker.py ${D}${bindir}/device-tracker
     install -m 0644 ${WORKDIR}/oui_lookup.py ${D}${bindir}/oui_lookup.py
+    install -m 0644 ${WORKDIR}/geolocation.py ${D}${bindir}/geolocation.py
     
     # Install OUI database
     install -m 0644 ${WORKDIR}/oui-database.txt ${D}${datadir}/device-tracker/oui-database.txt
@@ -53,6 +57,7 @@ FILES:${PN} += " \
     ${localstatedir}/lib/device-tracker \
     ${bindir}/device-tracker \
     ${bindir}/oui_lookup.py \
+    ${bindir}/geolocation.py \
     ${datadir}/device-tracker/oui-database.txt \
     ${sysconfdir}/device-tracker/oui-database.txt \
 "

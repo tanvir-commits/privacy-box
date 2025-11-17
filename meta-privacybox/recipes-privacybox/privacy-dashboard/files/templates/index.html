@@ -67,7 +67,86 @@
             background-attachment: fixed;
             color: var(--color-text);
             min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        
+        .sidebar {
+            width: 240px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
+            padding: var(--spacing-lg);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .sidebar-header {
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-md);
+            border-bottom: 2px solid var(--color-border-light);
+        }
+        
+        .sidebar-title {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+        
+        .sidebar-subtitle {
+            font-size: 12px;
+            color: var(--color-text-tertiary);
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin-bottom: var(--spacing-xs);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--color-text);
+            text-decoration: none;
+        }
+        
+        .nav-item:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+        
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+            font-weight: 600;
+            border-left: 3px solid var(--color-primary);
+        }
+        
+        .nav-icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .main-content {
+            flex: 1;
+            margin-left: 240px;
             padding: var(--spacing-md);
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
         }
         
         .container {
@@ -499,6 +578,62 @@
             letter-spacing: 0.5px;
             flex-shrink: 0;
             margin-left: var(--spacing-xs);
+        }
+        
+        .country-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .country-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--color-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            transition: all 0.2s ease;
+        }
+        
+        .country-item:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateX(2px);
+        }
+        
+        .country-code {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-primary);
+            min-width: 60px;
+            text-align: center;
+            padding: var(--spacing-sm);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: var(--radius-md);
+        }
+        
+        .country-stats {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .country-queries {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text);
+        }
+        
+        .country-trackers {
+            font-size: 14px;
+            color: var(--color-tracker);
+        }
+        
+        .country-devices {
+            font-size: 12px;
+            color: var(--color-text-tertiary);
         }
         
         .loading {
@@ -1119,14 +1254,43 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">🔒 Privacy Box</div>
+            <div class="sidebar-subtitle">Network Privacy Dashboard</div>
+        </div>
+        <nav>
+            <a href="#dashboard" class="nav-item active" data-section="dashboard">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="#devices" class="nav-item" data-section="devices">
+                <span class="nav-icon">🖥️</span>
+                <span>Devices</span>
+            </a>
+            <a href="#geolocation" class="nav-item" data-section="geolocation">
+                <span class="nav-icon">🌍</span>
+                <span>Geolocation</span>
+            </a>
+            <a href="#activity" class="nav-item" data-section="activity">
+                <span class="nav-icon">⚡</span>
+                <span>Activity</span>
+            </a>
+        </nav>
+    </div>
+    
+    <div class="main-content">
         <div class="refresh-indicator" id="refreshIndicator">
             Last updated: <span id="lastUpdate">-</span>
         </div>
-        <header>
-            <h1>🔒 Privacy Box</h1>
-            <p class="subtitle">See what each device is actually doing</p>
-        </header>
+        
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="section active">
+            <div class="container">
+                <header>
+                    <h1>🔒 Privacy Box</h1>
+                    <p class="subtitle">See what each device is actually doing</p>
+                </header>
         
         <div class="stats-grid" id="networkStats">
             <div class="stat-card privacy-score-card" id="privacyScoreCard">
@@ -1152,20 +1316,6 @@
             </div>
         </div>
         
-        <div class="devices-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin: 0;">Devices</h2>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <select id="deviceSort" class="select-control">
-                        <option value="trackers">Sort by Trackers</option>
-                        <option value="queries">Sort by Queries</option>
-                        <option value="name">Sort by Name</option>
-                    </select>
-                    <input type="text" id="deviceSearch" class="search-box" placeholder="Search devices..." style="max-width: 300px; margin: 0;">
-                </div>
-            </div>
-            <div id="devicesList" class="loading">Loading devices...</div>
-        </div>
         
         <div class="devices-section">
             <h2 style="margin-bottom: 20px;">Network-Wide Top Domains</h2>
@@ -1181,19 +1331,68 @@
             </div>
         </div>
         
-        <!-- Device Detail Modal -->
-        <div id="deviceModal" class="modal">
-            <div class="modal-content">
-                <span class="close" id="closeModal">&times;</span>
-                <div id="modalContent">
-                    <div class="loading">Loading device details...</div>
+        
+        <!-- Devices Section -->
+        <div id="devices-section" class="section">
+            <div class="container">
+                <header>
+                    <h1>Devices</h1>
+                    <p class="subtitle">Per-device tracking and statistics</p>
+                </header>
+                <div class="devices-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0;">All Devices</h2>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="deviceSort" class="select-control">
+                                <option value="trackers">Sort by Trackers</option>
+                                <option value="queries">Sort by Queries</option>
+                                <option value="name">Sort by Name</option>
+                            </select>
+                            <input type="text" id="deviceSearch" class="search-box" placeholder="Search devices..." style="max-width: 300px; margin: 0;">
+                        </div>
+                    </div>
+                    <div id="devicesList" class="loading">Loading devices...</div>
                 </div>
             </div>
         </div>
         
-        <div class="realtime-section">
-            <h2>Real-time Activity</h2>
-            <div id="realtimeList" class="loading">Waiting for activity...</div>
+        <!-- Geolocation Section -->
+        <div id="geolocation-section" class="section">
+            <div class="container">
+                <header>
+                    <h1>🌍 Geolocation</h1>
+                    <p class="subtitle">See where your data is going</p>
+                </header>
+                <div class="devices-section">
+                    <div class="stats-grid" id="geolocationStats" style="margin-bottom: 30px;">
+                        <div class="loading">Loading geolocation stats...</div>
+                    </div>
+                    <div id="geolocationCountries" class="loading">Loading countries...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activity Section -->
+        <div id="activity-section" class="section">
+            <div class="container">
+                <header>
+                    <h1>⚡ Real-time Activity</h1>
+                    <p class="subtitle">Live DNS query feed</p>
+                </header>
+                <div class="realtime-section">
+                    <div id="realtimeList" class="loading">Waiting for activity...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Device Detail Modal -->
+        <div id="deviceModal" class="modal">
+            <div class="modal-content">
+                <span class="close" id="closeModal">&times;</span>
+                <div id="deviceModalContent">
+                    <div class="loading">Loading device details...</div>
+                </div>
+            </div>
         </div>
     </div>
     

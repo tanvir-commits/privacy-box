@@ -382,6 +382,93 @@ def get_realtime():
     conn.close()
     return jsonify(queries)
 
+@app.route('/api/geolocation/stats')
+def get_geolocation_stats():
+    """Get geolocation statistics"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    since = int((datetime.now() - timedelta(hours=24)).timestamp())
+    
+    # Get country breakdown
+    cursor.execute("""
+        SELECT 
+            country_code,
+            COUNT(*) as query_count,
+            SUM(CASE WHEN is_tracker = 1 THEN 1 ELSE 0 END) as tracker_count
+        FROM dns_queries
+        WHERE timestamp > ? AND country_code IS NOT NULL
+        GROUP BY country_code
+        ORDER BY query_count DESC
+    """, (since,))
+    
+    countries = []
+    for row in cursor.fetchall():
+        countries.append({
+            'country_code': row[0],
+            'queries': row[1],
+            'trackers': row[2]
+        })
+    
+    # Get total queries with country data
+    cursor.execute("""
+        SELECT COUNT(*) 
+        FROM dns_queries 
+        WHERE timestamp > ? AND country_code IS NOT NULL
+    """, (since,))
+    total_with_country = cursor.fetchone()[0] or 0
+    
+    # Get total queries
+    cursor.execute("""
+        SELECT COUNT(*) 
+        FROM dns_queries 
+        WHERE timestamp > ?
+    """, (since,))
+    total_queries = cursor.fetchone()[0] or 0
+    
+    conn.close()
+    
+    return jsonify({
+        'countries': countries,
+        'total_queries': total_queries,
+        'queries_with_country': total_with_country,
+        'coverage_percent': round((total_with_country / total_queries * 100) if total_queries > 0 else 0, 1)
+    })
+
+@app.route('/api/geolocation/countries')
+def get_geolocation_countries():
+    """Get list of countries with query statistics"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    since = int((datetime.now() - timedelta(hours=24)).timestamp())
+    
+    cursor.execute("""
+        SELECT 
+            country_code,
+            COUNT(*) as query_count,
+            SUM(CASE WHEN is_tracker = 1 THEN 1 ELSE 0 END) as tracker_count,
+            COUNT(DISTINCT device_ip) as device_count
+        FROM dns_queries
+        WHERE timestamp > ? AND country_code IS NOT NULL
+        GROUP BY country_code
+        ORDER BY query_count DESC
+        LIMIT 50
+    """, (since,))
+    
+    countries = []
+    for row in cursor.fetchall():
+        countries.append({
+            'country_code': row[0],
+            'queries': row[1],
+            'trackers': row[2],
+            'device_count': row[3]
+        })
+    
+    conn.close()
+    
+    return jsonify(countries)
+
 @app.route('/api/network/top-domains')
 def get_top_domains():
     """Get network-wide top domains and trackers with device breakdown"""

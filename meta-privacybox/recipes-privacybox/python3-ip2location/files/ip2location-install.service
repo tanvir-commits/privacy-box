@@ -1,0 +1,13 @@
+[Unit]
+Description=Install IP2Location Python Library
+After=network.target
+Before=device-tracker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/install-ip2location
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
