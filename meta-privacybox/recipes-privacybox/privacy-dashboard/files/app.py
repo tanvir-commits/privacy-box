@@ -96,6 +96,44 @@ def get_device_icon(device_type):
     }
     return icon_map.get(device_type, '🖥️')
 
+def calculate_privacy_score(total_queries, tracker_queries, blocked_queries):
+    """Calculate privacy score (0-100) based on tracker ratio and blocking effectiveness"""
+    if total_queries == 0:
+        return 100  # No queries = perfect privacy
+    
+    # Tracker ratio (lower is better)
+    tracker_ratio = tracker_queries / total_queries if total_queries > 0 else 0
+    
+    # Blocking effectiveness (higher is better)
+    blocking_ratio = blocked_queries / tracker_queries if tracker_queries > 0 else 1.0
+    
+    # Base score starts at 100
+    score = 100
+    
+    # Penalize for tracker ratio (0% trackers = no penalty, 100% trackers = -50 points)
+    tracker_penalty = tracker_ratio * 50
+    score -= tracker_penalty
+    
+    # Reward for blocking effectiveness (100% blocked = +20 points, 0% blocked = 0 points)
+    blocking_bonus = blocking_ratio * 20
+    score += blocking_bonus
+    
+    # Ensure score is between 0 and 100
+    score = max(0, min(100, score))
+    
+    return round(score)
+
+def get_privacy_score_color(score):
+    """Get color class for privacy score"""
+    if score >= 80:
+        return 'privacy-excellent'
+    elif score >= 60:
+        return 'privacy-good'
+    elif score >= 40:
+        return 'privacy-moderate'
+    else:
+        return 'privacy-poor'
+
 @app.route('/')
 def index():
     """Main dashboard page"""
@@ -244,13 +282,22 @@ def get_network_stats():
     """, (since,))
     
     stats = cursor.fetchone()
+    total_queries = stats[0] or 0
+    tracker_queries = stats[1] or 0
+    blocked_queries = stats[2] or 0
+    device_count = stats[3] or 0
+    
+    # Calculate network privacy score
+    network_privacy_score = calculate_privacy_score(total_queries, tracker_queries, blocked_queries)
+    network_privacy_color = get_privacy_score_color(network_privacy_score)
     
     # Get per-device breakdown
     cursor.execute("""
         SELECT 
             device_ip,
             COUNT(*) as queries,
-            SUM(CASE WHEN is_tracker = 1 THEN 1 ELSE 0 END) as trackers
+            SUM(CASE WHEN is_tracker = 1 THEN 1 ELSE 0 END) as trackers,
+            SUM(CASE WHEN blocked = 1 THEN 1 ELSE 0 END) as blocked
         FROM dns_queries
         WHERE timestamp > ?
         GROUP BY device_ip
@@ -260,27 +307,40 @@ def get_network_stats():
     devices = []
     for row in cursor.fetchall():
         device_ip = row[0]
+        device_queries = row[1]
+        device_trackers = row[2]
+        device_blocked = row[3]
+        
         # Get most up-to-date device name
         device_name = get_device_name(cursor, device_ip)
         device_type = get_device_type(device_name)
         device_icon = get_device_icon(device_type)
+        
+        # Calculate per-device privacy score
+        device_privacy_score = calculate_privacy_score(device_queries, device_trackers, device_blocked)
+        device_privacy_color = get_privacy_score_color(device_privacy_score)
+        
         devices.append({
             'ip': device_ip,
             'name': device_name,
             'type': device_type,
             'icon': device_icon,
-            'queries': row[1],
-            'trackers': row[2]
+            'queries': device_queries,
+            'trackers': device_trackers,
+            'privacy_score': device_privacy_score,
+            'privacy_color': device_privacy_color
         })
     
     conn.close()
     
     return jsonify({
         'network': {
-            'total_queries': stats[0] or 0,
-            'tracker_queries': stats[1] or 0,
-            'blocked_queries': stats[2] or 0,
-            'device_count': stats[3] or 0
+            'total_queries': total_queries,
+            'tracker_queries': tracker_queries,
+            'blocked_queries': blocked_queries,
+            'device_count': device_count,
+            'privacy_score': network_privacy_score,
+            'privacy_color': network_privacy_color
         },
         'devices': devices
     })

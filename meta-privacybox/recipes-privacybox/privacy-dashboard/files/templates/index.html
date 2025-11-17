@@ -159,6 +159,102 @@
             line-height: 1.2;
         }
         
+        .privacy-score-card {
+            grid-column: span 1;
+        }
+        
+        .privacy-score-value {
+            font-size: 56px;
+            font-weight: 800;
+        }
+        
+        .privacy-score-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+        
+        .privacy-score-value.privacy-excellent {
+            color: #10b981;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .privacy-score-value.privacy-good {
+            color: #3b82f6;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .privacy-score-value.privacy-moderate {
+            color: #f59e0b;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .privacy-score-value.privacy-poor {
+            color: #ef4444;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .privacy-score-label.privacy-excellent {
+            color: #10b981;
+        }
+        
+        .privacy-score-label.privacy-good {
+            color: #3b82f6;
+        }
+        
+        .privacy-score-label.privacy-moderate {
+            color: #f59e0b;
+        }
+        
+        .privacy-score-label.privacy-poor {
+            color: #ef4444;
+        }
+        
+        .device-privacy-score {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-left: 6px;
+        }
+        
+        .device-privacy-score.privacy-excellent {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+        
+        .device-privacy-score.privacy-good {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+        
+        .device-privacy-score.privacy-moderate {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+        
+        .device-privacy-score.privacy-poor {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+        
         .devices-section {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
             padding: var(--spacing-lg);
@@ -1033,6 +1129,11 @@
         </header>
         
         <div class="stats-grid" id="networkStats">
+            <div class="stat-card privacy-score-card" id="privacyScoreCard">
+                <div class="stat-label">Privacy Score</div>
+                <div class="stat-value privacy-score-value" id="privacyScore">-</div>
+                <div class="privacy-score-label" id="privacyScoreLabel">-</div>
+            </div>
             <div class="stat-card">
                 <div class="stat-label">Total Devices</div>
                 <div class="stat-value" id="deviceCount">-</div>
@@ -1097,6 +1198,13 @@
     </div>
     
     <script>
+        function getPrivacyScoreLabel(score) {
+            if (score >= 80) return 'Excellent';
+            if (score >= 60) return 'Good';
+            if (score >= 40) return 'Moderate';
+            return 'Poor';
+        }
+        
         async function fetchNetworkStats() {
             try {
                 const response = await fetch('/api/network/stats');
@@ -1105,10 +1213,19 @@
                 }
                 const data = await response.json();
                 
+                // Update network stats
                 document.getElementById('deviceCount').textContent = data.network.device_count;
                 document.getElementById('trackerQueries').textContent = data.network.tracker_queries.toLocaleString();
                 document.getElementById('blockedQueries').textContent = data.network.blocked_queries.toLocaleString();
                 document.getElementById('totalQueries').textContent = data.network.total_queries.toLocaleString();
+                
+                // Update privacy score
+                const privacyScore = data.network.privacy_score || 0;
+                const privacyColor = data.network.privacy_color || 'privacy-moderate';
+                document.getElementById('privacyScore').textContent = privacyScore;
+                document.getElementById('privacyScore').className = `stat-value privacy-score-value ${privacyColor}`;
+                document.getElementById('privacyScoreLabel').textContent = getPrivacyScoreLabel(privacyScore);
+                document.getElementById('privacyScoreLabel').className = `privacy-score-label ${privacyColor}`;
                 
                 // Update devices list
                 updateDevicesList(data.devices);
@@ -1134,6 +1251,8 @@
             const trackerPct = device.queries > 0 ? Math.round((device.trackers / device.queries) * 100) : 0;
             const isActive = device.queries > 0;
             const queriesShort = device.queries >= 1000 ? (device.queries / 1000).toFixed(1) + 'k' : device.queries.toLocaleString();
+            const privacyScore = device.privacy_score || 0;
+            const privacyColor = device.privacy_color || 'privacy-moderate';
             
             return `
                 <div class="device-card clickable" onclick="showDeviceDetails('${device.ip}')">
@@ -1141,7 +1260,10 @@
                     <div class="device-header">
                         <span class="device-icon">${device.icon || '🖥️'}</span>
                         <div class="device-info">
-                            <div class="device-name">${device.name}</div>
+                            <div class="device-name">
+                                ${device.name}
+                                <span class="device-privacy-score ${privacyColor}">${privacyScore}</span>
+                            </div>
                             <div class="device-ip">${device.ip}</div>
                         </div>
                     </div>
