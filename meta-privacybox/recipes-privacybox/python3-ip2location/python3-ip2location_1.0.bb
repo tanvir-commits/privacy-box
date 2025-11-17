@@ -14,14 +14,22 @@ SRC_URI = " \
 
 S = "${WORKDIR}"
 
-inherit allarch
+inherit allarch systemd
+
+SYSTEMD_SERVICE:${PN} = "ip2location-install.service"
 
 do_install() {
     install -d ${D}${bindir}
+    install -d ${D}${systemd_system_unitdir}
+    
     install -m 0755 ${WORKDIR}/install-ip2location.sh ${D}${bindir}/install-ip2location
+    install -m 0644 ${WORKDIR}/ip2location-install.service ${D}${systemd_system_unitdir}/
 }
 
-FILES:${PN} += "${bindir}/install-ip2location"
+FILES:${PN} += " \
+    ${bindir}/install-ip2location \
+    ${systemd_system_unitdir}/ip2location-install.service \
+"
 
 RDEPENDS:${PN} = "python3-pip"
 

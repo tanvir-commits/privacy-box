@@ -12,8 +12,9 @@ SRC_URI = " \
     ${DB_URL};name=db;downloadfilename=${DB_FILENAME} \
 "
 
-SRC_URI[db.sha256sum] = ""  # Skip checksum - database updates frequently
-SRC_URI[db.md5sum] = ""     # Skip checksum - database updates frequently
+# Skip checksum verification - database updates frequently
+SRC_URI[db.sha256sum] = "skip"
+SRC_URI[db.md5sum] = "skip"
 
 S = "${WORKDIR}"
 
